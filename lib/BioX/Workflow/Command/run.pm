@@ -13,22 +13,31 @@ use Data::Dumper;
 use Class::Load ':all';
 use IO::File;
 use Text::Template qw(fill_in_string);
-
-#Don't think I need this anymore
-use Data::Pairs;
-
 use Storable qw(dclone);
+use Log::Log4perl qw(:easy);
+
+=head1 BioX::Workflow::Command::run
+
+This is the main class of the `biox-workflow.pl run` command.
+
+=cut
+
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
 use BioX::Workflow::Command::run::Utils::Directives;
 
+with 'BioX::Workflow::Command::run::Utils::Samples';
 with 'BioX::Workflow::Command::run::Utils::Attributes';
+with 'BioX::Workflow::Command::run::Utils::Rules';
 
 command_short_description 'Run your workflow';
 command_long_description
   'Run your workflow, process the variables, and create all your directories.';
 
-#TODO glob patterns
+=head2 Command Line Options
+
+=cut
+
 option 'workflow' => (
     is            => 'rw',
     isa           => 'ArrayRef',
@@ -61,6 +70,7 @@ option 'select_after' => (
     isa           => 'Str',
     required      => 0,
     predicate     => 'has_select_after',
+    clearer       => 'clear_select_after',
     documentation => 'Select rules after and including a particular rule.',
     cmd_aliases   => ['sa'],
 );
@@ -70,11 +80,13 @@ option 'select_before' => (
     isa           => 'Str',
     required      => 0,
     predicate     => 'has_select_before',
+    clearer       => 'clear_select_before',
     documentation => 'Select rules before and including a particular rule.',
     cmd_aliases   => ['sb'],
 );
 
 option 'select_between' => (
+    traits        => ['Array'],
     is            => 'rw',
     isa           => ArrayRefOfStrs,
     documentation => 'select rules to process',
@@ -83,6 +95,11 @@ option 'select_between' => (
     default       => sub { [] },
     documentation => 'Select sets of rules. Ex: rule1-rule2,rule4-rule5',
     cmd_aliases   => ['sbtwn'],
+    handles       => {
+        all_select_between  => 'elements',
+        has_select_between  => 'count',
+        join_select_between => 'join',
+    },
 );
 
 option 'match_rules' => (
@@ -101,8 +118,36 @@ option 'match_rules' => (
     cmd_aliases => ['mr'],
 );
 
+##Application log
+has 'app_log' => (
+    is      => 'rw',
+    default => sub {
+        my $self = shift;
+
+        Log::Log4perl->init( \ <<'EOT');
+  log4perl.category = DEBUG, Screen
+  log4perl.appender.Screen = \
+      Log::Log4perl::Appender::ScreenColoredLevels
+  log4perl.appender.Screen.layout = \
+      Log::Log4perl::Layout::PatternLayout
+  log4perl.appender.Screen.layout.ConversionPattern = \
+      [%d] %m %n
+EOT
+        return get_logger();
+    }
+);
+
+=head2 Attributes
+
+=cut
+
+=head2 Subroutines
+
+=cut
+
 sub BUILD {
     my $self = shift;
+    ##TODO add plugins here
 }
 
 sub execute {
@@ -110,6 +155,9 @@ sub execute {
 
     $self->load_yaml_workflow;
     $self->apply_global_attributes;
+    $self->get_samples;
+
+    $self->iterate_rules;
 }
 
 sub load_yaml_workflow {
@@ -118,22 +166,18 @@ sub load_yaml_workflow {
     my $cfg =
       Config::Any->load_files( { files => $self->workflow, use_ext => 1 } );
 
+    #TODO Add Layering
     for (@$cfg) {
         my ( $filename, $config ) = %$_;
         $self->workflow_data($config);
     }
-}
 
-sub apply_global_attributes {
-    my $self = shift;
-
-    my $global_attr = BioX::Workflow::Command::run::Utils::Directives->new();
-    $self->global_attr($global_attr);
-
-    return unless exists $self->workflow_data->{global};
-
-    $self->global_attr->create_attr($self->workflow_data->{global});
+    if ( !exists $self->workflow_data->{global} ) {
+        $self->workflow_data->{global} = [];
+    }
 
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

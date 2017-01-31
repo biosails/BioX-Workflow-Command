@@ -6,5 +6,9 @@ use Test::Class::Moose::Runner;
 ##Run the main applications tests
 
 Test::Class::Moose::Runner->new(
-    test_classes => [ 'TestsFor::BioX::Workflow::Command::run::Test001', ], )
-  ->runtests;
+    test_classes => [
+        'TestsFor::BioX::Workflow::Command::run::Test001',
+        'TestsFor::BioX::Workflow::Command::run::Test002',
+        'TestsFor::BioX::Workflow::Command::run::Test003'
+    ],
+)->runtests;

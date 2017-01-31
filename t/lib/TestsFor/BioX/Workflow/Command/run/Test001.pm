@@ -11,9 +11,9 @@ use YAML::XS;
 
 extends 'TestMethod::Base';
 
-sub test_000 : Tags(require) {
+#This tests the functionality with sample_by_dir: 0
 
-    diag("In Test001");
+sub test_000 : Tags(require) {
 
     require_ok('BioX::Workflow::Command');
     ok(1);
@@ -27,9 +27,8 @@ sub write_test_file {
         global => [
             { indir     => 'data/raw' },
             { outdir    => 'data/processed' },
-            { file_rule => "Sample_(\\w+)" },
+            { sample_rule => "Sample_(\\w+)" },
             { gatk => '{$self->outdir}/{$sample}/gatk' },
-            { some_array => ['one', 'two'] }
         ],
         rules => [
             {
@@ -109,14 +108,13 @@ sub test_003 : Tags(construction) {
     ok(1);
 }
 
-sub test_004 : Tags(global) {
+sub test_004 : Tags(global_attr) {
     my $self = shift;
 
+    # my $cwd = getcwd();
     my $test_methods = TestMethod::Base->new();
     my $test_dir     = $test_methods->make_test_dir();
     write_test_file($test_dir);
-
-    my $cwd = getcwd();
 
     my $t = "$test_dir/conf/test1.1.yml";
 
@@ -124,12 +122,13 @@ sub test_004 : Tags(global) {
 
     my $test = BioX::Workflow::Command->new_with_command();
 
-    $test->execute();
-    diag Dumper($test->global_attr->all_some_array);
+    # $test->execute();
+    $test->load_yaml_workflow;
+    $test->apply_global_attributes;
 
-    is($test->global_attr->indir, $test_dir.'/data/raw', 'Indir matches');
+    is($test->global_attr->indir, 'data/raw', 'Indir matches');
+    is($test->global_attr->indir->absolute, $test_dir.'/data/raw', 'Absolute Indir matches');
     is($test->global_attr->gatk, '{$self->outdir}/{$sample}/gatk', 'GATK matches');
-
 }
 
 1;

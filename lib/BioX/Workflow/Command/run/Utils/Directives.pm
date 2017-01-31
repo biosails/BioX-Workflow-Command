@@ -5,28 +5,23 @@ use Moose;
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
 use Cwd qw(abs_path getcwd);
-
+use Path::Tiny;
+use Data::Merger qw(merger);
 use Data::Walk;
 use Text::Template;
-
 use Data::Dumper;
+use Scalar::Util 'blessed';
+
+# use File::Basename;
+use File::Spec;
+
+use Moose::Util::TypeConstraints;
+class_type 'Path';
+class_type 'Paths';
 
 use namespace::autoclean;
 
 =head2 File Options
-
-=head3 coerce_paths
-
-Coerce relative path directories in variables: indir, outdir, and other variables ending in _dir to full path names
-
-=cut
-
-has 'coerce_paths' => (
-    is        => 'rw',
-    isa       => 'Bool',
-    default   => 1,
-    predicate => 'has_coerce_paths',
-);
 
 =head3 indir outdir
 
@@ -38,7 +33,7 @@ All output is written relative to the outdir
 
 has 'indir' => (
     is            => 'rw',
-    isa           => AbsPath,
+    isa           => Path,
     coerce        => 1,
     required      => 0,
     default       => sub { getcwd(); },
@@ -49,7 +44,7 @@ has 'indir' => (
 
 has 'outdir' => (
     is            => 'rw',
-    isa           => AbsPath,
+    isa           => Path,
     coerce        => 1,
     required      => 0,
     default       => sub { getcwd(); },
@@ -66,19 +61,53 @@ Special variables that can have input/output
 
 has 'OUTPUT' => (
     is            => 'rw',
-    isa           => 'Str|Undef',
+    required      => 0,
     predicate     => 'has_OUTPUT',
-    clearer       => 'clear_OUTPUT',
     documentation => q(At the end of each process the OUTPUT becomes
     the INPUT.)
 );
 
 has 'INPUT' => (
     is            => 'rw',
-    isa           => 'Str|Undef',
+    required      => 0,
     predicate     => 'has_INPUT',
-    clearer       => 'clear_INPUT',
     documentation => q(See OUTPUT)
+);
+
+=head2 sample_bydir
+
+Use this option when you sample names are by directory
+The default is to find samples by filename
+
+    /SAMPLE1
+        SAMPLE1_r1.fastq.gz
+        SAMPLE1_r2.fastq.gz
+    /SAMPLE2
+        SAMPLE2_r1.fastq.gz
+        SAMPLE2_r2.fastq.gz
+
+=cut
+
+has 'sample_bydir' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 0,
+    documentation => q{Use this option when you sample names are directories},
+    predicate     => 'has_sample_bydir',
+    clearer       => 'clear_sample_bydir',
+);
+
+=head3 by_sample_outdir
+
+=cut
+
+has 'by_sample_outdir' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 0,
+    documentation => q{Use this option when you sample names are directories},
+    predicate     => 'has_by_sample_outdir',
+    clearer       => 'clear_by_sample_outdir',
 );
 
 =head3 INPUTS OUTPUTS
@@ -86,48 +115,6 @@ has 'INPUT' => (
 Same as INPUT/OUTPUT, but in list format
 
 =cut
-
-has 'OUT_FILES' => (
-    traits  => ['Array'],
-    isa     => 'ArrayRef[AbsPath]',
-    is      => 'rw',
-    handles => {
-        all_OUTPUTS   => 'elements',
-        has_OUTPUTS   => 'count',
-        clear_OUTPUTS => 'clear',
-        join_OUTPUTS  => 'join',
-    },
-    default => sub { [] },
-    documentation => 'See OUTPUT. This is the same, except in list format.',
-);
-
-has 'IN_FILES' => (
-    traits  => ['Array'],
-    isa     => 'ArrayRef[AbsPath]',
-    is      => 'rw',
-    default => sub { [] },
-    handles => {
-        all_INPUTS   => 'elements',
-        has_INPUTS   => 'count',
-        clear_INPUTS => 'clear',
-        join_INPUTS  => 'join',
-    },
-    documentation => 'See INPUT. This is the same, except in list format.',
-);
-
-has 'DIRS' => (
-    traits  => ['Array'],
-    isa     => 'ArrayRef[AbsPath]',
-    is      => 'rw',
-    handles => {
-        all_DIRS   => 'elements',
-        has_DIRS   => 'count',
-        clear_DIRS => 'clear',
-        join_DIRS  => 'join',
-    },
-    default       => sub { [] },
-    documentation => 'Dirs that are coerced to AbsPaths.',
-);
 
 =head3 create_outdir
 
@@ -161,11 +148,25 @@ has 'override_process' => (
     },
 );
 
+has 'samples' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Choose a subset of samples',
+    default       => sub { [] },
+    handles       => {
+        all_samples  => 'elements',
+        has_samples  => 'count',
+        join_samples => 'join',
+    },
+);
+
 has 'sample' => (
     is        => 'rw',
     isa       => 'Str',
     predicate => 'has_sample',
-    clearer => 'clear_sample',
+    clearer   => 'clear_sample',
     required  => 0,
 );
 
@@ -215,12 +216,8 @@ sub create_attr {
     my $seen = {};
 
     for my $attr ( $meta->get_all_attributes ) {
+        next if $attr->name eq 'stash';
         $seen->{ $attr->name } = 1;
-    }
-
-    #TODO Move this to a sanity check of the structure
-    if ( !ref($data) eq 'ARRAY' ) {
-        die print 'Your variable declarations should begin with an array!';
     }
 
     # Get workflow_data structure
@@ -229,6 +226,8 @@ sub create_attr {
     foreach my $href ( @{$data} ) {
 
         if ( !ref($href) eq 'HASH' ) {
+
+            #TODO add more informative structure options here
             die print 'Your variable declarations should be key/value!';
         }
 
@@ -236,20 +235,16 @@ sub create_attr {
 
             if ( !exists $seen->{$k} ) {
 
-                if ( $k =~ m/_dir$/ ) {
-                    print "Creating an abs path $k\n";
-                    $self->create_abs_path_attr( $meta, $k );
+                if ( $k eq 'stash' ) {
+                    $self->merge_stash($v);
                 }
                 elsif ( ref($v) eq 'HASH' ) {
-                    print "Creating an hash $k\n";
                     $self->create_HASH_attr( $meta, $k );
                 }
                 elsif ( ref($v) eq 'ARRAY' ) {
-                    print "Creating an array $k\n";
                     $self->create_ARRAY_attr( $meta, $k );
                 }
                 else {
-                    print "Creating a regular attr $k\n";
                     $self->create_reg_attr( $meta, $k );
                 }
             }
@@ -262,23 +257,12 @@ sub create_attr {
     $meta->make_immutable;
 }
 
-sub create_abs_path_attr {
-    my $self = shift;
-    my $meta = shift;
-    my $k    = shift;
+sub merge_stash {
+    my $self   = shift;
+    my $target = shift;
 
-    my $coerce = 0;
-    $coerce = 1 if $self->coerce_paths;
-
-    $meta->add_attribute(
-        $k => (
-            is        => 'rw',
-            isa       => AbsPath,
-            coerce    => $coerce,
-            predicate => "has_$k",
-            clearer   => "clear_$k"
-        )
-    );
+    my $merged_data = merger( $target, $self->stash );
+    $self->stash($merged_data);
 }
 
 sub create_ARRAY_attr {
@@ -332,9 +316,8 @@ sub create_reg_attr {
 
     $meta->add_attribute(
         $k => (
-            is        => 'rw',
-            predicate => "has_$k",
-            clearer   => "clear_$k"
+            is         => 'rw',
+            lazy_build => 1,
         )
     );
 }
@@ -343,6 +326,9 @@ sub interpol_directive {
     my $self   = shift;
     my $source = shift;
 
+    if(! $source ){
+      return '';
+    }
 
     my $template = Text::Template->new(
         TYPE   => 'STRING',
@@ -357,23 +343,90 @@ sub interpol_directive {
     return $text;
 }
 
+sub walk_process_data {
+    my $self = shift;
+    my $keys = shift;
+
+    foreach my $k ( @{$keys} ) {
+        next if ref($k);
+        my $v = $self->$k;
+        if ( $k eq 'OUTPUT' || $k eq 'INPUT' || $k =~ m/_dir$/ ) {
+            $self->process_directive( $k, $v, 1 );
+        }
+        elsif ( $k eq 'indir' || $k eq 'outdir' ) {
+            $self->process_directive( $k, $v, 1 );
+        }
+        else {
+            $self->process_directive( $k, $v, 0 );
+        }
+    }
+}
+
+=head3 process_directive
+
+=cut
+
+sub process_directive {
+    my $self = shift;
+    my $k    = shift;
+    my $v    = shift;
+    my $path = shift;
+
+    if ( ref($v) ) {
+        walk {
+            wanted => sub { $self->walk_directives( @_, $path ) }
+          },
+          $self->$k;
+    }
+    else {
+        my $text = $self->interpol_directive($v);
+        if ($path && $text ne '') {
+            $text = path($text)->absolute;
+            $self->$k("$text");
+            return;
+        }
+
+        $self->$k($text);
+    }
+}
+
+#TODO See if we can combine these to one
+
 =head3 walk_directives
 
 Invoke with
-  walk { wanted => sub { $self->do_something(@_) } }, $self->other_thing;
+  walk { wanted => sub { $self->directives(@_) } }, $self->other_thing;
+
+Acts funny with $self->some_other_thing is not a reference
 
 =cut
 
 sub walk_directives {
     my $self = shift;
-    my $ref  = $_;
+    my $ref  = shift;
+    my $path = shift;
 
     return if ref($ref);
+    return unless $ref;
 
-    my $text      = $self->interpol_directive($ref);
-    my $container = $Data::Walk::container;
-    my $key       = $Data::Walk::key;
-    my $index     = $Data::Walk::index;
+    my $text = $self->interpol_directive($ref);
+    if ($path) {
+        $text = path($text)->absolute;
+        $text = "$text";
+    }
+
+    $self->update_directive($text);
+}
+
+sub update_directive {
+    my $self = shift;
+    my $text = shift;
+
+    my ( $key, $container, $index );
+
+    $container = $Data::Walk::container;
+    $key       = $Data::Walk::key;
+    $index     = $Data::Walk::index;
 
     if ( $Data::Walk::type eq 'HASH' && $key ) {
         $container->{$key} = $text;
@@ -382,10 +435,11 @@ sub walk_directives {
         $container->[$index] = $text;
     }
     else {
-        #We should raise some warnings here...
+        #We are getting the whole hash, just return
+        return;
     }
-
-    return;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

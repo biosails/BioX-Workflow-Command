@@ -3,8 +3,12 @@ package BioX::Workflow::Command::run::Utils::Samples;
 use File::Find::Rule;
 use File::Basename;
 use List::Uniq ':all';
+use Data::Walk;
 
 use MooseX::App::Role;
+use Storable qw(dclone);
+use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
+use Path::Tiny;
 
 =head1 BioX::Workflow::Command::run::Utils::Samples
 
@@ -12,7 +16,7 @@ use MooseX::App::Role;
 
 =head3 resample
 
-Boolean value get new samples based on indir/file_rule or no
+Boolean value get new samples based on indir/sample_rule or no
 
 Samples are found at the beginning of the workflow, based on the global indir variable and the file_find.
 
@@ -31,39 +35,17 @@ has 'resample' => (
     clearer   => 'clear_resample',
 );
 
-=head3 infiles
+=head3 sample_files
 
 Infiles to be processed
 
 =cut
 
-has 'infiles' => (
+has 'sample_files' => (
     is     => 'rw',
     isa    => 'ArrayRef',
 );
 
-=head2 find_by_dir
-
-Use this option when you sample names are by directory
-The default is to find samples by filename
-
-    /SAMPLE1
-        SAMPLE1_r1.fastq.gz
-        SAMPLE1_r2.fastq.gz
-    /SAMPLE2
-        SAMPLE2_r1.fastq.gz
-        SAMPLE2_r2.fastq.gz
-
-=cut
-
-has 'find_by_dir' => (
-    is            => 'rw',
-    isa           => 'Bool',
-    default       => 0,
-    documentation => q{Use this option when you sample names are directories},
-    predicate     => 'has_find_by_dir',
-    clearer       => 'clear_find_by_dir',
-);
 
 =head2 by_sample_outdir
 
@@ -96,7 +78,7 @@ has 'by_sample_outdir' => (
 
 =head3 samples
 
-Our samples to process. They are either found through file_rule, or passed as command line opts
+Our samples to process. They are either found through sample_rule, or passed as command line opts
 
 =cut
 
@@ -120,7 +102,7 @@ has 'samples' => (
         sorted_samples => 'sort',
     },
     documentation =>
-        q{Supply samples on the command line as --samples sample1 --samples sample2, or find through file_rule.}
+        q{Supply samples on the command line as --samples sample1 --samples sample2, or find through sample_rule.}
 );
 
 =head3 sample
@@ -134,20 +116,21 @@ has 'sample'=> (
     isa => 'Str',
     required => 0,
     default => '',
+    predicate => 'has_sample',
 );
 
-=head3 file_rule
+=head3 sample_rule
 
 Rule to find files/samples
 
 =cut
 
-has 'file_rule' => (
+has 'sample_rule' => (
     is        => 'rw',
     isa       => 'Str',
     default   => sub { return "(.*)"; },
-    clearer   => 'clear_file_rule',
-    predicate => 'has_file_rule',
+    clearer   => 'clear_sample_rule',
+    predicate => 'has_sample_rule',
 );
 
 =head2 Subroutines
@@ -156,7 +139,7 @@ has 'file_rule' => (
 
 Get basename of the files. Can add optional rules.
 
-sample.vcf.gz and sample.vcf would be sample if the file_rule is (.vcf)$|(.vcf.gz)$
+sample.vcf.gz and sample.vcf would be sample if the sample_rule is (.vcf)$|(.vcf.gz)$
 
 Also gets the full path to infiles
 
@@ -176,25 +159,36 @@ Could have
 
 sub get_samples {
     my ($self) = shift;
-    my ( @whole, @basename, $text );
+    my ( @whole, @basename, $text, $attr );
 
+    #Stupid resample
     if ( $self->has_samples && !$self->resample ) {
         my (@samples) = $self->sorted_samples;
         $self->samples( \@samples );
         return;
     }
 
-    $text = $self->file_rule;
+    #We need to evaluate the global_dirs incase the indir has a var
+    #But we don't keep it around, because that would be madness
+    $attr = dclone($self->global_attr);
+    if ( $attr->indir =~ m/\{\$self/ ) {
+      walk { wanted => sub { $attr->walk_directives(@_) } }, $attr;
+    }
 
-    if ( $self->find_by_dir ) {
+    $text = $self->sample_rule;
+
+    if ( $attr->sample_bydir ) {
         @whole = find(
             directory => name => qr/$text/,
             maxdepth  => 1,
-            in        => $self->indir
+            in        => $attr->indir
         );
 
+        if($whole[0] eq $attr->indir){
+          shift(@whole);
+        }
+
         #File find puts directory we are looking in, not just subdirs
-        @basename = grep { $_ != basename( $self->{indir} ) } @basename;
         @basename = map  { basename($_) } @whole;
         @basename = sort(@basename);
     }
@@ -202,7 +196,7 @@ sub get_samples {
         @whole = find(
             file     => name => qr/$text/,
             maxdepth => 1,
-            in       => $self->indir
+            in       => $attr->indir
         );
 
         @basename = map { $self->match_samples( $_, $text ) } @whole;
@@ -210,16 +204,22 @@ sub get_samples {
         @basename = sort(@basename);
     }
 
-    $self->samples( \@basename );
-    $self->infiles( \@whole );
+    my @sample_files = map { path($_)->absolute } @whole;
+    @sample_files = sort(@sample_files);
 
-    $self->write_sample_meta;
+    #Throw error if sample don't exist
+    $self->samples( \@basename ) if @basename;
+    $self->sample_files( \@sample_files ) if @sample_files;
+
+    $self->global_attr->samples(dclone($self->samples));
+
+    # $self->write_sample_meta;
 }
 
 
 =head2 match_samples
 
-Match samples based on regex written in file_rule
+Match samples based on regex written in sample_rule
 
 =cut
 
@@ -250,7 +250,6 @@ sub process_by_sample_outdir {
     $tt =~ s/$key/$sample\/$key/;
     $self->outdir($tt);
     $self->make_outdir;
-    $self->attr->set( 'outdir' => $self->outdir );
 
     $tt = $self->indir;
     if ( $tt =~ m/\{\$self/ ) {
@@ -266,7 +265,6 @@ sub process_by_sample_outdir {
         $tt = "$tt/$sample";
         $self->indir($tt);
     }
-    $self->attr->set( 'indir' => $self->indir );
 }
 
 1;
