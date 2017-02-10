@@ -3,7 +3,7 @@ package BioX::Workflow::Command;
 use v5.10;
 our $VERSION = '0.0.1';
 
-use MooseX::App qw(Color Config);
+use MooseX::App qw(Color Config MutexGroup);
 
 app_strict 0;
 

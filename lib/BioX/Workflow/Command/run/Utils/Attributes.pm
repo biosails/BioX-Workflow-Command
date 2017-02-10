@@ -121,6 +121,7 @@ has 'process_rule_names' => (
         all_process_rule_names  => 'elements',
         has_process_rule_names  => 'count',
         join_process_rule_names => 'join',
+        first_index_process_rule_names => 'first_index',
     },
 );
 

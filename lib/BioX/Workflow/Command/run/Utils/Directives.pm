@@ -11,6 +11,8 @@ use Data::Walk;
 use Text::Template;
 use Data::Dumper;
 use Scalar::Util 'blessed';
+use Try::Tiny;
+use Safe;
 
 # use File::Basename;
 use File::Spec;
@@ -170,6 +172,23 @@ has 'sample' => (
     required  => 0,
 );
 
+has 'errors' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+);
+
+has 'is_select' => (
+    traits => ['Bool'],
+    isa     => 'Bool',
+    is      => 'rw',
+    default => 1,
+    handles => {
+      deselect => 'unset',
+      select => 'set',
+    },
+);
+
 =head2 stash
 
 This isn't ever used in the code. Its just there incase you want to persist objects across rules
@@ -228,7 +247,8 @@ sub create_attr {
         if ( !ref($href) eq 'HASH' ) {
 
             #TODO add more informative structure options here
-            die print 'Your variable declarations should be key/value!';
+            warn 'Your variable declarations should be key/value!';
+            return;
         }
 
         while ( my ( $k, $v ) = each( %{$href} ) ) {
@@ -325,22 +345,46 @@ sub create_reg_attr {
 sub interpol_directive {
     my $self   = shift;
     my $source = shift;
+    my $text   = '';
 
-    if(! $source ){
-      return '';
+    if ( !$source ) {
+        return '';
     }
 
+    my $c        = new Safe;
     my $template = Text::Template->new(
         TYPE   => 'STRING',
         SOURCE => $source,
+        SAFE   => $c,
     );
 
     my $fill_in = { self => \$self };
     $fill_in->{sample} = $self->sample if $self->has_sample;
 
-    my $text = $template->fill_in( HASH => $fill_in );
+    $text = $template->fill_in( HASH => $fill_in, BROKEN => \&my_broken );
 
     return $text;
+}
+
+sub my_broken {
+    my %args    = @_;
+    my $err_ref = $args{arg};
+    my $text    = $args{text};
+    my $error   = $args{error};
+    $error =~ s/via package.*//g;
+    chomp($error);
+    if ( $error =~ m/Can't locate object method/ ) {
+        $error .= "\n# Did you declare $text?";
+    }
+
+    return <<EOF;
+
+###################################################
+# The following errors were encountered:
+# $text
+# $error
+###################################################
+EOF
 }
 
 sub walk_process_data {
@@ -380,7 +424,7 @@ sub process_directive {
     }
     else {
         my $text = $self->interpol_directive($v);
-        if ($path && $text ne '') {
+        if ( $path && $text ne '' ) {
             $text = path($text)->absolute;
             $self->$k("$text");
             return;

@@ -23,18 +23,33 @@ has 'rule_keys' => (
 );
 
 has 'local_rule_keys' => (
+    traits  => ['Array'],
     is      => 'rw',
     isa     => 'ArrayRef',
     default => sub { return [] },
+    handles => {
+        all_local_rule_keys => 'elements',
+        has_local_rule_keys => 'count',
+    },
+);
+
+has 'global_keys' => (
+    traits  => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef',
+    default => sub { return [] },
+    handles => {
+        all_global_keys => 'elements',
+        has_global_keys => 'count',
+    },
 );
 
 #This should be in its own role
 sub iterate_rules {
     my $self = shift;
 
-    my $rules = $self->workflow_data->{rules};
-
     $self->set_rule_names;
+    my $rules = $self->workflow_data->{rules};
 
     foreach my $rule (@$rules) {
 
@@ -102,25 +117,27 @@ sub set_process_rules {
                   . $self->select_before
                   . " that does not exist" );
         }
-        for ( my $x = $index ; $x < $self->has_rule_names; $x++ ) {
+        for ( my $x = $index ; $x < $self->has_rule_names ; $x++ ) {
             push( @rules, $self->rule_names->[$x] );
         }
     }
     elsif ( $self->has_select_between ) {
         foreach my $rule ( $self->all_select_between ) {
             my (@array) = split( '-', $rule );
-            my $index1  = $self->first_index_rule_names( sub { $_ eq $array[0] } );
-            my $index2  = $self->first_index_rule_names( sub { $_ eq $array[1] } );
+            my $index1 =
+              $self->first_index_rule_names( sub { $_ eq $array[0] } );
+            my $index2 =
+              $self->first_index_rule_names( sub { $_ eq $array[1] } );
             for ( my $x = $index1 ; $x <= $index2 ; $x++ ) {
                 push( @rules, $self->rule_names->[$x] );
             }
         }
     }
     elsif ( $self->match_rules ) {
-      foreach my $match_rule ($self->all_match_rules){
-        my @t_rules = $self->grep_rule_names( sub { /$match_rule/ } );
-        map { push( @rules, $_ ) } @t_rules;
-      }
+        foreach my $match_rule ( $self->all_match_rules ) {
+            my @t_rules = $self->grep_rule_names( sub { /$match_rule/ } );
+            map { push( @rules, $_ ) } @t_rules;
+        }
     }
     else {
         $self->process_rule_names( dclone( $self->rule_names ) );
@@ -222,11 +239,23 @@ Do the actual processing of the rule->process
 sub template_process {
     my $self = shift;
 
-    foreach my $sample ( @{ $self->samples } ) {
+    $self->write_rule_meta('before_meta');
+
+    foreach my $sample ( $self->all_samples ) {
 
         $self->local_attr->sample($sample);
         $self->template_process_sample;
     }
+}
+
+sub get_global_keys {
+    my $self        = shift;
+    my @global_keys = ();
+
+    map { my ($key) = keys %{$_}; push( @global_keys, $key ) }
+      @{ $self->workflow_data->{global} };
+
+    $self->global_keys(\@global_keys);
 }
 
 sub get_keys {
@@ -235,6 +264,7 @@ sub get_keys {
     my %seen = ();
     my @local_keys = map { my ($key) = keys %{$_}; $seen{$key} = 1; $key }
       @{ $self->local_rule->{ $self->rule_name }->{local} };
+
     my @global_keys = ();
     map { my ($key) = keys %{$_}; push( @global_keys, $key ) if !$seen{$key} }
       @{ $self->workflow_data->{global} };
@@ -264,6 +294,7 @@ sub template_process_sample {
 
     my $text = $attr->interpol_directive($process);
 
+    $self->fh->print($text);
     return $text;
 }
 

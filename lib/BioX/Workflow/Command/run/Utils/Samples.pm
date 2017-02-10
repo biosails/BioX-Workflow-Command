@@ -213,7 +213,7 @@ sub get_samples {
 
     $self->global_attr->samples(dclone($self->samples));
 
-    # $self->write_sample_meta;
+    $self->write_sample_meta;
 }
 
 

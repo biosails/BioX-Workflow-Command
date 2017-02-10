@@ -15,6 +15,10 @@ use IO::File;
 use Text::Template qw(fill_in_string);
 use Storable qw(dclone);
 use Log::Log4perl qw(:easy);
+use DateTime;
+use File::Basename;
+use IO::File;
+use Try::Tiny;
 
 =head1 BioX::Workflow::Command::run
 
@@ -29,6 +33,8 @@ use BioX::Workflow::Command::run::Utils::Directives;
 with 'BioX::Workflow::Command::run::Utils::Samples';
 with 'BioX::Workflow::Command::run::Utils::Attributes';
 with 'BioX::Workflow::Command::run::Utils::Rules';
+with 'BioX::Workflow::Command::run::Utils::WriteMeta';
+with 'BioX::Workflow::Command::Utils::Log';
 
 command_short_description 'Run your workflow';
 command_long_description
@@ -40,13 +46,13 @@ command_long_description
 
 option 'workflow' => (
     is            => 'rw',
-    isa           => 'ArrayRef',
+    isa           => 'Str',
     required      => 1,
-    documentation => 'Supply one or more workflows here.',
+    documentation => 'Supply a workflow',
     cmd_split     => qr/,/,
-    handles       => {
-        all_workflow => 'elements',
-    },
+    # handles       => {
+    #     all_workflow => 'elements',
+    # },
 );
 
 option 'select_rules' => (
@@ -118,23 +124,43 @@ option 'match_rules' => (
     cmd_aliases => ['mr'],
 );
 
-##Application log
-has 'app_log' => (
-    is      => 'rw',
-    default => sub {
-        my $self = shift;
+option 'outfile' => (
+  is => 'rw',
+  isa => 'Str',
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    my $workflow  = $self->workflow;
+    my @files = fileparse($self->workflow, qr/\.[^.]*/);
+    my $dt = DateTime->now();
+    return $files[0].'_'.$dt->ymd.'_'.$dt->hour.$dt->minute.$dt->second.'.sh';
+  },
+  documentation => 'Write your workflow to a file',
+);
 
-        Log::Log4perl->init( \ <<'EOT');
-  log4perl.category = DEBUG, Screen
-  log4perl.appender.Screen = \
-      Log::Log4perl::Appender::ScreenColoredLevels
-  log4perl.appender.Screen.layout = \
-      Log::Log4perl::Layout::PatternLayout
-  log4perl.appender.Screen.layout.ConversionPattern = \
-      [%d] %m %n
-EOT
-        return get_logger();
+option 'stdout' => (
+  is => 'rw',
+  isa => 'Bool',
+  default => 0,
+  documentation => 'Write workflows to STDOUT',
+  predicate => 'has_stdout',
+);
+
+
+has 'fh' => (
+  is => 'rw',
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    my $fh = new IO::File;
+    if($self->stdout){
+      $fh->fdopen(fileno(STDOUT),"w");
     }
+    else{
+      $fh->open("> ".$self->outfile);
+    }
+    return $fh;
+  },
 );
 
 =head2 Attributes
@@ -153,9 +179,13 @@ sub BUILD {
 sub execute {
     my $self = shift;
 
+    $self->print_opts;
     $self->load_yaml_workflow;
     $self->apply_global_attributes;
     $self->get_samples;
+
+    $self->get_global_keys;
+    $self->write_workflow_meta('start');
 
     $self->iterate_rules;
 }
@@ -163,8 +193,9 @@ sub execute {
 sub load_yaml_workflow {
     my $self = shift;
 
+    my @files = ($self->workflow);
     my $cfg =
-      Config::Any->load_files( { files => $self->workflow, use_ext => 1 } );
+      Config::Any->load_files( { files => \@files, use_ext => 1 } );
 
     #TODO Add Layering
     for (@$cfg) {

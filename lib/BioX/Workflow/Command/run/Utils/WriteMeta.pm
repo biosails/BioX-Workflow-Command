@@ -1,6 +1,7 @@
 package BioX::Workflow::Command::run::Utils::WriteMeta;
 
 use MooseX::App::Role;
+use YAML;
 
 =head1 BioX::Workflow::Command::run::Utils::WriteMeta;
 
@@ -17,9 +18,9 @@ Default comment char is '#'.
 =cut
 
 option 'comment_char' => (
-  is => 'rw',
-  isa => 'Str',
-  default => '#',
+    is      => 'rw',
+    isa     => 'Str',
+    default => '#',
 );
 
 =head3 verbose
@@ -36,23 +37,34 @@ option 'verbose' => (
     predicate => 'has_verbose',
 );
 
-=head3 wait
-
-=cut
-
-has 'wait' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 0,
-    documentation =>
-        q(Print 'wait' at the end of each rule. If you are running as a plain bash script you probably don't need this.),
-    clearer   => 'clear_wait',
-    predicate => 'has_wait',
-);
-
 =head2 Subroutines
 
 =cut
+
+sub print_opts {
+    my $self = shift;
+
+    my $now = DateTime->now();
+    $self->fh->say("#!/usr/bin/env bash\n\n");
+
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->say("$self->{comment_char} Generated at: $now");
+    $self->fh->say(
+"$self->{comment_char} This file was generated with the following options"
+    );
+
+    for ( my $x = 0 ; $x <= $#ARGV ; $x++ ) {
+        next unless $ARGV[$x];
+        $self->fh->print("$self->{comment_char}\t$ARGV[$x]\t");
+        if ( $ARGV[ $x + 1 ] ) {
+            $self->fh->print( $ARGV[ $x + 1 ] );
+        }
+        $self->fh->print("\n");
+        $x++;
+    }
+
+    $self->fh->say("$self->{comment_char}\n");
+}
 
 sub write_workflow_meta {
     my $self = shift;
@@ -61,25 +73,23 @@ sub write_workflow_meta {
     return unless $self->verbose;
 
     if ( $type eq "start" ) {
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Starting Workflow\n";
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Global Variables:\n";
+        $self->fh->say("$self->{comment_char}\n");
+        $self->fh->say("$self->{comment_char} Starting Workflow\n");
+        $self->fh->say("$self->{comment_char}");
+        $self->fh->say("$self->{comment_char}");
+        $self->fh->say("$self->{comment_char} Global Variables:");
 
-        my @keys = $self->global_attr->get_keys();
-
-        foreach my $k (@keys) {
+        foreach my $k ( $self->all_global_keys ) {
             next unless $k;
-            my ($v) = $self->global_attr->get_values($k);
-            print "$self->{comment_char}\t$k: " . $v . "\n";
+            my $v = $self->global_attr->$k;
+            $self->fh->print( $self->write_pretty_meta( $k, $v ) );
         }
-        print "$self->{comment_char}\n";
+        $self->fh->say("$self->{comment_char}");
     }
     elsif ( $type eq "end" ) {
-        print "$self->{comment_char}\n";
-        print "$self->{comment_char} Ending Workflow\n";
-        print "$self->{comment_char}\n";
+        $self->fh->say("$self->{comment_char}");
+        $self->fh->say("$self->{comment_char} Ending Workflow");
+        $self->fh->say("$self->{comment_char}");
     }
 }
 
@@ -88,42 +98,43 @@ sub write_workflow_meta {
 =cut
 
 sub write_rule_meta {
-    my ( $self, $meta ) = @_;
+    my $self = shift;
+    my $meta = shift;
 
-    print "\n$self->{comment_char}\n";
+    $self->fh->say("\n$self->{comment_char}");
 
     if ( $meta eq "after_meta" ) {
-        print "$self->{comment_char} Ending $self->{key}\n";
+        $self->fh->say("$self->{comment_char} Ending $self->{key}");
     }
 
-    print "$self->{comment_char}\n\n";
+    $self->fh->say("$self->{comment_char}\n");
 
     return unless $meta eq "before_meta";
-    print "$self->{comment_char} Starting $self->{key}\n";
-    print "$self->{comment_char}\n\n";
+    $self->fh->say("$self->{comment_char} Starting $self->{rule_name}");
+    $self->fh->say("$self->{comment_char}\n");
 
     return unless $self->verbose;
 
-    print "\n\n$self->{comment_char}\n";
-    print "$self->{comment_char} Variables \n";
-    print "$self->{comment_char} Indir: " . $self->indir . "\n";
-    print "$self->{comment_char} Outdir: " . $self->outdir . "\n";
+    $self->fh->say("\n\n$self->{comment_char}");
+    $self->fh->say("$self->{comment_char} Variables");
+    $self->fh->say(
+        "$self->{comment_char} Indir: " . $self->local_attr->indir );
+    $self->fh->say(
+        "$self->{comment_char} Outdir: " . $self->local_attr->outdir );
 
-    if ( exists $self->local_rule->{ $self->key }->{local} ) {
+    if ( exists $self->local_rule->{ $self->rule_name }->{local} ) {
 
-        print "$self->{comment_char} Local Variables:\n";
+        $self->fh->say("$self->{comment_char} Local Variables:\n");
 
-        my @keys = $self->local_attr->get_keys();
-
-        foreach my $k (@keys) {
-            my ($v) = $self->local_attr->get_values($k);
-            print "$self->{comment_char}\t$k: " . $v . "\n";
+        foreach my $k ( $self->all_local_rule_keys ) {
+            my ($v) = $self->local_attr->$k;
+            $self->fh->print( $self->write_pretty_meta( $k, $v ) );
         }
     }
 
     $self->write_sample_meta if $self->resample;
 
-    print "$self->{comment_char}\n\n";
+    $self->fh->say("$self->{comment_char}\n\n");
 }
 
 =head2 write_sample_meta
@@ -140,12 +151,40 @@ sub write_sample_meta {
 
     return unless $self->verbose;
 
-    print "$self->{comment_char}\n";
-    print "$self->{comment_char} Samples: ",
-        join( ", ", @{ $self->samples } ) . "\n";
-    print "$self->{comment_char}\n";
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->print(
+        "$self->{comment_char} Samples: ",
+        join( ", ", @{ $self->samples } ) . "\n"
+    );
+    $self->fh->say("$self->{comment_char}\n");
 
 }
 
+sub write_pretty_meta {
+    my $self = shift;
+    my $k    = shift;
+    my $v    = shift;
 
+    my $t = '';
+    if ( !ref($v) ) {
+        $t = "$self->{comment_char}\t$k: " . $v . "\n";
+    }
+    else {
+        $v = Dump($v);
+        my %seen       = ();
+        my @uniq_array = ();
+        my @array      = split( "\n", $v );
+        shift(@array);
+        for ( my $x = 0 ; $x <= $#array ; $x++ ) {
+            my $t = $self->comment_char . "\t\t" . $array[$x];
+            next if $seen{$t};
+            push( @uniq_array, $t );
+            $seen{$t} = 1;
+        }
+        $v = join( "\n", @uniq_array );
+        $t = "$self->{comment_char}\t$k:\n" . $v . "\n";
+    }
+
+    return $t;
+}
 1;

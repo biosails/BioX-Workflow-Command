@@ -229,6 +229,13 @@ sub test_002 {
         'Match rules evaluates correctly' );
     $test->match_rules( [] );
 
+    #############################
+    # Writing some meta
+    #############################
+    $test->get_global_keys;
+    $test->write_workflow_meta('start');
+
+    diag($test->outfile);
 }
 
 sub _init_rule {
