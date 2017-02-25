@@ -158,10 +158,12 @@ Could have
 =cut
 
 sub get_samples {
-    my ($self) = shift;
+    my $self = shift;
     my ( @whole, @basename, $text, $attr );
 
     #Stupid resample
+    $self->get_global_keys;
+
     if ( $self->has_samples && !$self->resample ) {
         my (@samples) = $self->sorted_samples;
         $self->samples( \@samples );
@@ -170,9 +172,10 @@ sub get_samples {
 
     #We need to evaluate the global_dirs incase the indir has a var
     #But we don't keep it around, because that would be madness
+    #TODO Fix this we should process these the same way we process rule names
     $attr = dclone($self->global_attr);
     if ( $attr->indir =~ m/\{\$self/ ) {
-      walk { wanted => sub { $attr->walk_directives(@_) } }, $attr;
+      $attr->walk_process_data( $self->global_keys );
     }
 
     $text = $self->sample_rule;

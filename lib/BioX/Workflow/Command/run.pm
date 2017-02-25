@@ -6,25 +6,8 @@ use MooseX::App::Command;
 use File::Path qw(make_path remove_tree);
 use Cwd qw(abs_path getcwd);
 use Data::Dumper;
-use List::Compare;
-use YAML::XS 'LoadFile';
-use Config::Any;
-use Data::Dumper;
-use Class::Load ':all';
-use IO::File;
-use Text::Template qw(fill_in_string);
-use Storable qw(dclone);
-use Log::Log4perl qw(:easy);
-use DateTime;
 use File::Basename;
-use IO::File;
 use Try::Tiny;
-
-=head1 BioX::Workflow::Command::run
-
-This is the main class of the `biox-workflow.pl run` command.
-
-=cut
 
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
@@ -40,20 +23,66 @@ command_short_description 'Run your workflow';
 command_long_description
   'Run your workflow, process the variables, and create all your directories.';
 
+=head1 BioX::Workflow::Command::run
+
+This is the main class of the `biox-workflow.pl run` command.
+
+=cut
+
 =head2 Command Line Options
 
 =cut
 
 option 'workflow' => (
     is            => 'rw',
-    isa           => 'Str',
+    isa           => AbsFile,
     required      => 1,
+    coerce        => 1,
     documentation => 'Supply a workflow',
-    cmd_split     => qr/,/,
-    # handles       => {
-    #     all_workflow => 'elements',
-    # },
 );
+
+option 'outfile' => (
+    is      => 'rw',
+    isa     => 'Str',
+    lazy    => 1,
+    default => sub {
+        my $self     = shift;
+        my $workflow = $self->workflow;
+        my @files    = fileparse( $self->workflow, qr/\.[^.]*/ );
+        my $dt       = DateTime->now(time_zone => 'local');
+        return
+            $files[0] . '_'
+          . $dt->ymd . '_'
+          . $dt->time('-') . '.sh';
+    },
+    documentation => 'Write your workflow to a file',
+);
+
+option 'stdout' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 0,
+    documentation => 'Write workflows to STDOUT',
+    predicate     => 'has_stdout',
+);
+
+has 'fh' => (
+    is      => 'rw',
+    lazy    => 1,
+    default => sub {
+        my $self = shift;
+        my $fh   = new IO::File;
+        if ( $self->stdout ) {
+            $fh->fdopen( fileno(STDOUT), "w" );
+        }
+        else {
+            $fh->open( "> " . $self->outfile );
+        }
+        return $fh;
+    },
+);
+
+# TODO move these to rules
 
 option 'select_rules' => (
     traits        => ['Array'],
@@ -108,59 +137,89 @@ option 'select_between' => (
     },
 );
 
-option 'match_rules' => (
+option 'omit_rules' => (
     traits        => ['Array'],
     is            => 'rw',
     required      => 0,
     isa           => ArrayRefOfStrs,
-    documentation => 'Match rules to process',
+    documentation => 'Omit rules to process',
     default       => sub { [] },
     cmd_split     => qr/,/,
     handles       => {
-        all_match_rules  => 'elements',
-        has_match_rules  => 'count',
-        join_match_rules => 'join',
+        all_omit_rules  => 'elements',
+        has_omit_rules  => 'count',
+        join_omit_rules => 'join',
     },
-    cmd_aliases => ['mr'],
+    cmd_aliases => ['or'],
 );
 
-option 'outfile' => (
-  is => 'rw',
-  isa => 'Str',
-  lazy => 1,
-  default => sub {
-    my $self = shift;
-    my $workflow  = $self->workflow;
-    my @files = fileparse($self->workflow, qr/\.[^.]*/);
-    my $dt = DateTime->now();
-    return $files[0].'_'.$dt->ymd.'_'.$dt->hour.$dt->minute.$dt->second.'.sh';
-  },
-  documentation => 'Write your workflow to a file',
+option 'omit_after' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_omit_after',
+    clearer       => 'clear_omit_after',
+    documentation => 'Omit rules after and including a particular rule.',
+    cmd_aliases   => ['oa'],
 );
 
-option 'stdout' => (
-  is => 'rw',
-  isa => 'Bool',
-  default => 0,
-  documentation => 'Write workflows to STDOUT',
-  predicate => 'has_stdout',
+option 'omit_before' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_omit_before',
+    clearer       => 'clear_omit_before',
+    documentation => 'Omit rules before and including a particular rule.',
+    cmd_aliases   => ['ob'],
 );
 
+option 'omit_between' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    isa           => ArrayRefOfStrs,
+    documentation => 'omit rules to process',
+    cmd_split     => qr/,/,
+    required      => 0,
+    default       => sub { [] },
+    documentation => 'Omit sets of rules. Ex: rule1-rule2,rule4-rule5',
+    cmd_aliases   => ['obtwn'],
+    handles       => {
+        all_omit_between  => 'elements',
+        has_omit_between  => 'count',
+        join_omit_between => 'join',
+    },
+);
 
-has 'fh' => (
-  is => 'rw',
-  lazy => 1,
-  default => sub {
-    my $self = shift;
-    my $fh = new IO::File;
-    if($self->stdout){
-      $fh->fdopen(fileno(STDOUT),"w");
-    }
-    else{
-      $fh->open("> ".$self->outfile);
-    }
-    return $fh;
-  },
+option 'select_match' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Match rules to select',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_select_match  => 'elements',
+        has_select_match  => 'count',
+        join_select_match => 'join',
+    },
+    cmd_aliases => ['sm'],
+);
+
+option 'omit_match' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Match rules to omit',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_omit_match  => 'elements',
+        has_omit_match  => 'count',
+        join_omit_match => 'join',
+    },
+    cmd_aliases => ['om'],
 );
 
 =head2 Attributes
@@ -173,18 +232,22 @@ has 'fh' => (
 
 sub BUILD {
     my $self = shift;
-    ##TODO add plugins here
+
+    # TO do add in configs and plugins
 }
 
 sub execute {
     my $self = shift;
 
     $self->print_opts;
-    $self->load_yaml_workflow;
+    if(! $self->load_yaml_workflow){
+      $self->app_log->warn('Exiting now.');
+      return;
+    }
     $self->apply_global_attributes;
+    $self->get_global_keys;
     $self->get_samples;
 
-    $self->get_global_keys;
     $self->write_workflow_meta('start');
 
     $self->iterate_rules;
@@ -193,9 +256,24 @@ sub execute {
 sub load_yaml_workflow {
     my $self = shift;
 
-    my @files = ($self->workflow);
-    my $cfg =
-      Config::Any->load_files( { files => \@files, use_ext => 1 } );
+    my $cfg;
+    my @files = ( $self->workflow );
+    my $valid = 1;
+
+    $self->app_log->info( 'Loading workflow ' . $self->workflow . ' ...' );
+
+    try {
+        $cfg = Config::Any->load_files( { files => \@files, use_ext => 1 } );
+    }
+    catch {
+        $self->app_log->warn(
+            "Unable to load your workflow. The following error was received.\n"
+        );
+        $self->app_log->warn("$_\n");
+        $valid = 0;
+    };
+
+    $self->app_log->info('Your workflow is valid') if $valid;
 
     #TODO Add Layering
     for (@$cfg) {
@@ -207,8 +285,10 @@ sub load_yaml_workflow {
         $self->workflow_data->{global} = [];
     }
 
+    return $valid;
 }
 
+no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

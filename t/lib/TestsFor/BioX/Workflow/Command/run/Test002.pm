@@ -19,15 +19,15 @@ sub write_test_file {
     my $fh;
     my $href = {
         global => [
-            { root_dir    => 'data/raw' },
-            { indir       => '{$self->root_dir}' },
-            { outdir      => 'data/processed' },
-            { sample_rule => "Sample_(\\w+)" },
-            { gatk        => '{$self->outdir}/{$sample}/gatk' },
-            { some_array  => [ 'one', 'two' ] },
-            { some_hash   => { 'banana' => 'yellow', 'apple' => 'red' } },
+            { root_dir      => 'data/raw' },
+            { indir         => '{$self->root_dir}' },
+            { outdir        => 'data/processed' },
+            { sample_rule   => "Sample_(\\w+)" },
+            { gatk          => '{$self->outdir}/{$sample}/gatk' },
+            { some_array    => [ 'one', 'two' ] },
+            { some_hash     => { 'banana' => 'yellow', 'apple' => 'red' } },
             { some_test_var => 'global_test_var' },
-            { some_dir => 'some_dir' },
+            { some_dir      => 'some_dir' },
         ],
         rules => [
             {
@@ -42,7 +42,7 @@ sub write_test_file {
                         { stash       => { 'banana' => 'Yellow' } }
                     ],
                     process =>
-                      'Executing rule1 {$self->indir} {$self->local_rule1} for {$sample}',
+'Executing rule1 {$self->indir} {$self->local_rule1} for {$sample}',
                 },
             },
             {
@@ -54,7 +54,7 @@ sub write_test_file {
                         { stash       => { 'some_key' => 'some_value' } }
                     ],
                     process =>
-                      'Executing rule2 {$self->OUTPUT->[0]} {$self->local_rule1} for {$sample}',
+'Executing rule2 {$self->OUTPUT->[0]} {$self->local_rule1} for {$sample}',
                 },
             },
             {
@@ -68,7 +68,8 @@ sub write_test_file {
                         },
                         { some_test_var => 'local_test_var' },
                     ],
-                    process => 'ROOT_DIR: {$self->root_dir} INDIR: {$self->indir} INPUT: {$self->INPUT}',
+                    process =>
+'ROOT_DIR: {$self->root_dir} INDIR: {$self->indir} INPUT: {$self->INPUT}',
                 },
             },
         ]
@@ -110,11 +111,11 @@ sub construct_tests {
 
     my $rules = $test->workflow_data->{rules};
 
-    return($test, $test_dir, $rules);
+    return ( $test, $test_dir, $rules );
 }
 
 sub test_001 : Tags(global_attr) {
-    my($test, $test_dir, $rules) = construct_tests;
+    my ( $test, $test_dir, $rules ) = construct_tests;
 
     $test->load_yaml_workflow;
     $test->apply_global_attributes;
@@ -130,7 +131,7 @@ sub test_001 : Tags(global_attr) {
 }
 
 sub test_002 : Tags(global_attr_interpolate) {
-    my($test, $test_dir, $rules) = construct_tests;
+    my ( $test, $test_dir, $rules ) = construct_tests;
 
     $test->load_yaml_workflow;
     $test->apply_global_attributes;
@@ -147,7 +148,7 @@ sub test_002 : Tags(global_attr_interpolate) {
 }
 
 sub test_003 : Tags(get_samples) {
-    my($test, $test_dir, $rules) = construct_tests;
+    my ( $test, $test_dir, $rules ) = construct_tests;
 
     $test->load_yaml_workflow;
     $test->apply_global_attributes;
@@ -170,7 +171,7 @@ sub test_003 : Tags(get_samples) {
 }
 
 sub test_004 : Tags(local_attr) {
-    my($test, $test_dir, $rules) = construct_tests;
+    my ( $test, $test_dir, $rules ) = construct_tests;
     my $rule;
 
     #############################
@@ -204,13 +205,13 @@ sub test_004 : Tags(local_attr) {
     $rule = $rules->[2];
     _init_rule( $test, $rule );
 
-    is( $test->local_attr->indir, '{$self->root_dir}' , 'Checking local attr');
+    is( $test->local_attr->indir, '{$self->root_dir}', 'Checking local attr' );
     is_deeply( $test->local_attr->stash,
         { some_key => 'some_value', banana => 'Yellow' } );
 }
 
 sub test_005 : Tags(INPUT_OUTPUT) {
-    my($test, $test_dir, $rules) = construct_tests;
+    my ( $test, $test_dir, $rules ) = construct_tests;
     my $rule;
 
     #############################
@@ -241,15 +242,14 @@ sub test_005 : Tags(INPUT_OUTPUT) {
         [ 'some_output_rule3_1', 'some_output_rule3_2' ] );
 }
 
-
-=head3 test_template_process_sample
+=head3 test_eval_process
 
 Test the process interpolation per sample
 
 =cut
 
-sub test_template_process_sample {
-    my($test, $test_dir, $rules) = construct_tests;
+sub test_eval_process {
+    my ( $test, $test_dir, $rules ) = construct_tests;
     my $rule;
     my $text;
 
@@ -259,10 +259,15 @@ sub test_template_process_sample {
     $rule = $rules->[0];
     _init_rule( $test, $rule );
 
-    $test->local_attr->sample($test->samples->[0]);
-    $text = $test->template_process_sample;
+    $test->local_attr->sample( $test->samples->[0] );
+    $text = $test->eval_process;
 
-    is($text, "Executing rule1 $test_dir/data/raw mylocalrule1 for ".$test->samples->[0], 'First rule process works');
+    is(
+        $text,
+        "Executing rule1 $test_dir/data/raw mylocalrule1 for "
+          . $test->samples->[0],
+        'First rule process works'
+    );
 
     #############################
     # Test Rule 2
@@ -270,10 +275,12 @@ sub test_template_process_sample {
     $rule = $rules->[1];
     _init_rule( $test, $rule );
 
-    $test->local_attr->sample($test->samples->[0]);
-    $text = $test->template_process_sample;
+    $test->local_attr->sample( $test->samples->[0] );
+    $text = $test->eval_process;
 
-    is($text, "Executing rule2 $test_dir/some_output_rule2 mylocalrule1 for ".$test->samples->[0]);
+    is( $text,
+        "Executing rule2 $test_dir/some_output_rule2 mylocalrule1 for "
+          . $test->samples->[0] );
 
     #############################
     # Test Rule 2
@@ -281,16 +288,19 @@ sub test_template_process_sample {
     $rule = $rules->[2];
     _init_rule( $test, $rule );
 
-    $test->local_attr->sample($test->samples->[0]);
-    $text = $test->template_process_sample;
+    $test->local_attr->sample( $test->samples->[0] );
+    $text = $test->eval_process;
 
-    is($text, "ROOT_DIR: $test_dir/data/raw INDIR: $test_dir/data/raw INPUT: $test_dir/data/raw/some_config_file.yml");
+    is( $text,
+"ROOT_DIR: $test_dir/data/raw INDIR: $test_dir/data/raw INPUT: $test_dir/data/raw/some_config_file.yml"
+    );
 
     #############################
     # Test Interpolating rule
     #############################
-    my $attr    = dclone( $test->local_attr );
-    # $attr->create_process([{'root_dir' => 'data/raw'}], [{'INPUT' => '{$self->root_dir}/config.json'}]);
+    my $attr = dclone( $test->local_attr );
+
+# $attr->create_process([{'root_dir' => 'data/raw'}], [{'INPUT' => '{$self->root_dir}/config.json'}]);
 
 }
 

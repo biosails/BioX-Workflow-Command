@@ -4,6 +4,9 @@ use v5.10;
 our $VERSION = '0.0.1';
 
 use MooseX::App qw(Color Config MutexGroup);
+use Config::Any;
+use MooseX::Types::Path::Tiny qw/AbsFile/;
+use Try::Tiny;
 
 app_strict 0;
 

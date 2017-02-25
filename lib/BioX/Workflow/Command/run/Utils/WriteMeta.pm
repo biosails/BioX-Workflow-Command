@@ -53,7 +53,8 @@ sub print_opts {
 "$self->{comment_char} This file was generated with the following options"
     );
 
-    for ( my $x = 0 ; $x <= $#ARGV ; $x++ ) {
+    $self->fh->print( "$self->{comment_char}\t" . $ARGV[0] . "\n" ) if $ARGV[0];
+    for ( my $x = 1 ; $x <= $#ARGV ; $x++ ) {
         next unless $ARGV[$x];
         $self->fh->print("$self->{comment_char}\t$ARGV[$x]\t");
         if ( $ARGV[ $x + 1 ] ) {
@@ -66,31 +67,43 @@ sub print_opts {
     $self->fh->say("$self->{comment_char}\n");
 }
 
+=head3 write_workflow_meta
+
+Write out the global variables in the start, and the ending variables in the end
+
+=cut
+
 sub write_workflow_meta {
     my $self = shift;
     my $type = shift;
 
     return unless $self->verbose;
 
-    if ( $type eq "start" ) {
-        $self->fh->say("$self->{comment_char}\n");
-        $self->fh->say("$self->{comment_char} Starting Workflow\n");
-        $self->fh->say("$self->{comment_char}");
-        $self->fh->say("$self->{comment_char}");
-        $self->fh->say("$self->{comment_char} Global Variables:");
+    $self->write_workflow_meta_start if $type eq 'start';
+    $self->write_workflow_meta_end   if $type eq 'end';
+}
 
-        foreach my $k ( $self->all_global_keys ) {
-            next unless $k;
-            my $v = $self->global_attr->$k;
-            $self->fh->print( $self->write_pretty_meta( $k, $v ) );
-        }
-        $self->fh->say("$self->{comment_char}");
+sub write_workflow_meta_start {
+    my $self = shift;
+    $self->fh->say("$self->{comment_char}\n");
+    $self->fh->say("$self->{comment_char} Starting Workflow\n");
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->say("$self->{comment_char} Global Variables:");
+
+    foreach my $k ( $self->all_global_keys ) {
+        next unless $k;
+        my $v = $self->global_attr->$k;
+        $self->fh->print( $self->write_pretty_meta( $k, $v ) );
     }
-    elsif ( $type eq "end" ) {
-        $self->fh->say("$self->{comment_char}");
-        $self->fh->say("$self->{comment_char} Ending Workflow");
-        $self->fh->say("$self->{comment_char}");
-    }
+    $self->fh->say("$self->{comment_char}");
+}
+
+sub write_workflow_meta_end {
+    my $self = shift;
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->say("$self->{comment_char} Ending Workflow");
+    $self->fh->say("$self->{comment_char}");
 }
 
 =head2 write_rule_meta
@@ -143,8 +156,7 @@ Write the meta for samples
 
 =cut
 
-#TODO add in global file handle
-#Should have opts for STDOUT, null, and an actual file
+#TODO add this to app log
 
 sub write_sample_meta {
     my $self = shift;
@@ -154,10 +166,11 @@ sub write_sample_meta {
     $self->fh->say("$self->{comment_char}");
     $self->fh->print(
         "$self->{comment_char} Samples: ",
-        join( ", ", @{ $self->samples } ) . "\n"
+        join( ', ', @{ $self->samples } ) . "\n"
     );
     $self->fh->say("$self->{comment_char}\n");
 
+    $self->app_log->info('Found samples: '.join(', ', @{$self->samples}));
 }
 
 sub write_pretty_meta {
@@ -187,4 +200,5 @@ sub write_pretty_meta {
 
     return $t;
 }
+
 1;

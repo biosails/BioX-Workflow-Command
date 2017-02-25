@@ -21,6 +21,11 @@ use Moose::Util::TypeConstraints;
 class_type 'Path';
 class_type 'Paths';
 
+use Memoize;
+
+memoize('my_broken');
+memoize('interpol_directive');
+
 use namespace::autoclean;
 
 =head2 File Options
@@ -110,6 +115,22 @@ has 'by_sample_outdir' => (
     documentation => q{Use this option when you sample names are directories},
     predicate     => 'has_by_sample_outdir',
     clearer       => 'clear_by_sample_outdir',
+);
+
+=head3 coerce_abs_dir
+
+Coerce dirs to absolute paths (True)
+Keep paths as relative directories (False)
+
+=cut
+
+has 'coerce_abs_dir' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 1,
+    documentation => q{Coerce '*_dir' to absolute directories},
+    predicate     => 'has_coerce_abs_dir',
+    clearer       => 'clear_coerce_abs_dir',
 );
 
 =head3 INPUTS OUTPUTS
@@ -425,7 +446,7 @@ sub process_directive {
     else {
         my $text = $self->interpol_directive($v);
         if ( $path && $text ne '' ) {
-            $text = path($text)->absolute;
+            $text = path($text)->absolute if $self->coerce_abs_dir;
             $self->$k("$text");
             return;
         }
@@ -455,12 +476,19 @@ sub walk_directives {
 
     my $text = $self->interpol_directive($ref);
     if ($path) {
-        $text = path($text)->absolute;
+        $text = path($text)->absolute if $self->coerce_abs_dir;
         $text = "$text";
     }
 
     $self->update_directive($text);
 }
+
+
+=head3 update_directive
+
+Take the values from walk_directive and update the directive
+
+=cut
 
 sub update_directive {
     my $self = shift;
@@ -484,6 +512,7 @@ sub update_directive {
     }
 }
 
+no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

@@ -16,6 +16,7 @@ Role for Rules
 
 =cut
 
+# TODO Change this to rules?
 has 'rule_keys' => (
     is      => 'rw',
     isa     => 'ArrayRef',
@@ -51,6 +52,8 @@ sub iterate_rules {
     $self->set_rule_names;
     my $rules = $self->workflow_data->{rules};
 
+    $self->filter_rule_keys;
+
     foreach my $rule (@$rules) {
 
         $self->local_rule($rule);
@@ -59,6 +62,23 @@ sub iterate_rules {
         $self->p_local_attr( dclone( $self->local_attr ) );
 
     }
+}
+
+=head3 filter_rule_keys
+
+Use the --select_rules and --omit_rules options to choose rules.
+
+By default all rules are selected
+
+=cut
+
+sub filter_rule_keys {
+    my $self = shift;
+
+    $self->select_rule_keys( dclone( $self->rule_names ) );
+    $self->set_rule_keys('select');
+    $self->set_rule_keys('omit');
+
 }
 
 =head3 set_rule_names
@@ -73,78 +93,110 @@ sub set_rule_names {
 
     my @rule_names = map { my ($key) = keys %{$_}; $key } @{$rules};
     $self->rule_names( \@rule_names );
+    $self->app_log->info( 'Found rules ' . join( ', ', @rule_names ) );
 }
 
-=head3 set_process_rules
+=head3 set_rule_keys
 
-If we have any select_* or match_rules, get those rules before we start processing
+If we have any select_* or select_match, get those rules before we start processing
 
 =cut
 
-sub set_process_rules {
+sub set_rule_keys {
     my $self = shift;
+    my $cond = shift || 'select';
 
-    my @rules = ();
+    my @rules       = ();
+    my $rule_exists = 1;
+    my @rule_name_exists = ();
 
-    if ( $self->has_select_rules ) {
-        foreach my $r ( $self->all_select_rules ) {
+    my ( $has_rules, $has_bf, $has_af, $has_btw, $has_match ) =
+      map { 'has_' . $cond . '_' . $_ }
+      ( 'rules', 'before', 'after', 'between', 'match' );
+
+    my ( $bf, $af ) = ( $cond . '_before', $cond . '_after' );
+
+    my ( $btw, $all_rules, $all_matches ) =
+      map { 'all_' . $cond . '_' . $_ } ( 'between', 'rules', 'match' );
+
+    my ($rule_keys) = ( $cond . '_rule_keys' );
+
+    if ( $self->$has_rules ) {
+        foreach my $r ( $self->$all_rules ) {
             if ( $self->first_index_rule_names( sub { $_ eq $r } ) != -1 ) {
                 push( @rules, $r );
             }
             else {
                 $self->app_log->warn(
                     "You selected a rule $r that does not exist");
+                $rule_exists = 0;
+                push(@rule_name_exists, $r);
             }
         }
     }
-    elsif ( $self->has_select_before ) {
-        my $index =
-          $self->first_index_rule_names( sub { $_ eq $self->select_before } );
+    elsif ( $self->$has_bf ) {
+        my $index = $self->first_index_rule_names( sub { $_ eq $self->$bf } );
         if ( $index == -1 ) {
-            $self->app_log->warn( "You selected a rule "
-                  . $self->select_before
+            $self->app_log->warn( "You "
+                  . $cond
+                  . "ed a rule "
+                  . $self->$bf
                   . " that does not exist" );
+            $rule_exists = 0;
+            push(@rule_name_exists, $self->$bf);
         }
         for ( my $x = 0 ; $x <= $index ; $x++ ) {
             push( @rules, $self->rule_names->[$x] );
         }
     }
-    elsif ( $self->has_select_after ) {
-        my $index =
-          $self->first_index_rule_names( sub { $_ eq $self->select_after } );
+    elsif ( $self->$has_af ) {
+        my $index = $self->first_index_rule_names( sub { $_ eq $self->$af } );
         if ( $index == -1 ) {
-            $self->app_log->warn( "You selected a rule "
-                  . $self->select_before
+            $self->app_log->warn( "You "
+                  . $cond
+                  . "ed a rule "
+                  . $self->$af
                   . " that does not exist" );
+            $rule_exists = 0;
+            push(@rule_name_exists, $self->$af);
         }
         for ( my $x = $index ; $x < $self->has_rule_names ; $x++ ) {
             push( @rules, $self->rule_names->[$x] );
         }
     }
-    elsif ( $self->has_select_between ) {
-        foreach my $rule ( $self->all_select_between ) {
+    elsif ( $self->$has_btw ) {
+        foreach my $rule ( $self->$btw ) {
             my (@array) = split( '-', $rule );
+
             my $index1 =
               $self->first_index_rule_names( sub { $_ eq $array[0] } );
             my $index2 =
               $self->first_index_rule_names( sub { $_ eq $array[1] } );
+
+            if ( $index1 == -1 || $index2 == -1 ) {
+                $self->app_log->warn( "You "
+                      . $cond
+                      . "ed a set of rules "
+                      . join( ',', $self->$btw )
+                      . " that does not exist" );
+                $rule_exists = 0;
+                push(@rule_name_exists, $rule);
+            }
+
             for ( my $x = $index1 ; $x <= $index2 ; $x++ ) {
                 push( @rules, $self->rule_names->[$x] );
             }
         }
     }
-    elsif ( $self->match_rules ) {
-        foreach my $match_rule ( $self->all_match_rules ) {
+    elsif ( $self->$has_match ) {
+        foreach my $match_rule ( $self->$all_matches ) {
             my @t_rules = $self->grep_rule_names( sub { /$match_rule/ } );
             map { push( @rules, $_ ) } @t_rules;
         }
     }
-    else {
-        $self->process_rule_names( dclone( $self->rule_names ) );
-        return;
-    }
 
-    $self->process_rule_names( \@rules );
+    $self->$rule_keys( \@rules ) if @rules;
+    return ($rule_exists, @rule_name_exists);
 }
 
 =head3 process_rule
@@ -165,7 +217,7 @@ sub process_rule {
 
     $self->apply_local_attr;
 
-    $self->get_keys();
+    $self->get_keys;
     $self->template_process;
 }
 
@@ -239,12 +291,16 @@ Do the actual processing of the rule->process
 sub template_process {
     my $self = shift;
 
-    $self->write_rule_meta('before_meta');
+    my $print_rule = $self->print_rule;
+
+    $self->write_rule_meta('before_meta') if $print_rule;
 
     foreach my $sample ( $self->all_samples ) {
 
         $self->local_attr->sample($sample);
-        $self->template_process_sample;
+        my $text = $self->eval_process($print_rule);
+        $self->fh->print($text) if $print_rule;
+
     }
 }
 
@@ -255,7 +311,7 @@ sub get_global_keys {
     map { my ($key) = keys %{$_}; push( @global_keys, $key ) }
       @{ $self->workflow_data->{global} };
 
-    $self->global_keys(\@global_keys);
+    $self->global_keys( \@global_keys );
 }
 
 sub get_keys {
@@ -271,6 +327,7 @@ sub get_keys {
 
     $self->local_rule_keys( dclone( \@local_keys ) );
 
+    #This should be an object for extending
     my @special_keys = ( 'indir', 'outdir', 'INPUT', 'OUTPUT' );
     foreach my $key (@special_keys) {
         if ( !$seen{$key} ) {
@@ -283,7 +340,7 @@ sub get_keys {
     $self->rule_keys( \@global_keys );
 }
 
-sub template_process_sample {
+sub eval_process {
     my $self = shift;
 
     my $process = $self->local_rule->{ $self->rule_name }->{process};
@@ -294,8 +351,41 @@ sub template_process_sample {
 
     my $text = $attr->interpol_directive($process);
 
-    $self->fh->print($text);
     return $text;
+}
+
+=head3 print_rule
+
+Decide if we print the rule
+
+=cut
+
+sub print_rule {
+    my $self       = shift;
+    my $print_rule = 1;
+
+    my $select_index =
+      $self->first_index_select_rule_keys( sub { $_ eq $self->rule_name } );
+
+    if ( $select_index == -1 ) {
+        $self->app_log->info(
+            'Select rules in place. Skipping rule ' . $self->rule_name );
+        $print_rule = 0;
+    }
+
+    my $omit_index =
+      $self->first_index_omit_rule_keys( sub { $_ eq $self->rule_name } );
+
+    if ( $omit_index != -1 ) {
+        $self->app_log->info(
+            'Omit rules in place. Skipping rule ' . $self->rule_name );
+        $print_rule = 0;
+    }
+
+    $self->app_log->info( 'Processing rule ' . $self->rule_name )
+      if $print_rule;
+
+    return $print_rule;
 }
 
 =head3 check_indir_outdir
@@ -315,11 +405,11 @@ sub check_indir_outdir {
 
     return unless $attr->by_sample_outdir;
     return unless $self->has_sample;
+    return if $attr->override_process;
 
-    #We should only do this if the dir is not specified
-
+    # If indir/outdir is specified in the local config
+    # then we don't evaluate it
     foreach my $dir ( ( 'indir', 'outdir' ) ) {
-
         if ( grep /$dir/, @{ $self->local_rule_keys } ) {
             next;
         }
@@ -340,6 +430,7 @@ sub check_indir_outdir {
         my $new_dir = File::Spec->catdir( $base_dir, '{$sample}', $last );
         $attr->$dir($new_dir);
     }
+
 }
 
 1;

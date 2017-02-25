@@ -85,6 +85,13 @@ sub test_002 : Tags(construction) {
 
     my $t = "$test_dir/conf/test1.1.yml";
 
+    if(-f $t){
+      diag('Workflow exists!');
+    }
+    else{
+      diag('Workflow does not exist!');
+    }
+
     MooseX::App::ParsedArgv->new( argv => [ "run", "--workflow", $t ] );
 
     my $test = BioX::Workflow::Command->new_with_command();

@@ -112,16 +112,29 @@ has 'rule_names' => (
     },
 );
 
-has 'process_rule_names' => (
+has 'select_rule_keys' => (
     traits        => ['Array'],
     is      => 'rw',
     isa     => 'ArrayRef',
     default => sub { [] },
     handles       => {
-        all_process_rule_names  => 'elements',
-        has_process_rule_names  => 'count',
-        join_process_rule_names => 'join',
-        first_index_process_rule_names => 'first_index',
+        all_select_rule_keys  => 'elements',
+        has_select_rule_keys  => 'count',
+        join_select_rule_keys => 'join',
+        first_index_select_rule_keys => 'first_index',
+    },
+);
+
+has 'omit_rule_keys' => (
+    traits        => ['Array'],
+    is      => 'rw',
+    isa     => 'ArrayRef',
+    default => sub { [] },
+    handles       => {
+        all_omit_rule_keys  => 'elements',
+        has_omit_rule_keys  => 'count',
+        join_omit_rule_keys => 'join',
+        first_index_omit_rule_keys => 'first_index',
     },
 );
 

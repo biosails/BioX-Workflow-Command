@@ -75,15 +75,7 @@ sub construct_tests {
     write_test_file($test_dir);
 
     my $t = "$test_dir/conf/test1.1.yml";
-
-    MooseX::App::ParsedArgv->new( argv => [ "run", "--workflow", $t ] );
-
-    my $test = BioX::Workflow::Command->new_with_command();
-
-    $test->load_yaml_workflow;
-    $test->apply_global_attributes;
-    $test->get_samples;
-
+    my $test = $test_methods->make_test_env($t);
     my $rules = $test->workflow_data->{rules};
 
     return ( $test, $test_dir, $rules );
@@ -97,6 +89,15 @@ sub test_001 {
     my $rule;
     my $text;
 
+    is_deeply(
+        $test->global_keys,
+        [
+            'sample_rule',  'root_dir',
+            'indir',        'outdir',
+            'sample_bydir', 'by_sample_outdir'
+        ]
+    );
+
     #############################
     # Test Rule 1
     #############################
@@ -105,7 +106,7 @@ sub test_001 {
 
     $test->local_attr->sample( $test->samples->[0] );
     $test->sample( $test->samples->[0] );
-    $text = $test->template_process_sample;
+    $text = $test->eval_process;
 
     is_deeply(
         $test->samples,
@@ -126,7 +127,7 @@ sub test_001 {
 
     $test->local_attr->sample( $test->samples->[0] );
     $test->sample( $test->samples->[0] );
-    $text = $test->template_process_sample;
+    $text = $test->eval_process;
     is( $text,
             "R2: SAMPLE: Sample_01"
           . " INDIR: $test_dir/data/processed/Sample_01/t3_rule1"
@@ -142,7 +143,7 @@ sub test_001 {
 
     $test->local_attr->sample( $test->samples->[0] );
     $test->sample( $test->samples->[0] );
-    $text = $test->template_process_sample;
+    $text = $test->eval_process;
     is( $text,
             "R3: SAMPLE: Sample_01 "
           . "INDIR: $test_dir/data/raw "
@@ -153,6 +154,7 @@ sub test_001 {
 sub test_002 {
     my ( $test, $test_dir, $rules ) = construct_tests;
 
+    #############################
     $test->set_rule_names();
     is_deeply( $test->rule_names, [ 't3_rule1', 't3_rule2', 't3_rule3' ] );
 
@@ -160,25 +162,25 @@ sub test_002 {
     # Test Select Rules
     #############################
     $test->select_rules( [ 't3_rule1', 't3_rule2' ] );
-    $test->set_process_rules;
-    is_deeply( $test->process_rule_names, [ 't3_rule1', 't3_rule2' ] );
+    $test->set_rule_keys('select');
+    is_deeply( $test->select_rule_keys, [ 't3_rule1', 't3_rule2' ] );
     $test->select_rules( [] );
 
     #############################
     # Test Select Before
     #############################
     $test->select_before('t3_rule2');
-    $test->set_process_rules;
-    is_deeply( $test->process_rule_names, [ 't3_rule1', 't3_rule2' ] );
+    $test->set_rule_keys('select');
+    is_deeply( $test->select_rule_keys, [ 't3_rule1', 't3_rule2' ] );
     $test->clear_select_before;
 
     #############################
     # Test Select After
     #############################
     $test->select_after('t3_rule2');
-    $test->set_process_rules;
+    $test->set_rule_keys('select');
     is_deeply(
-        $test->process_rule_names,
+        $test->select_rule_keys,
         [ 't3_rule2', 't3_rule3' ],
         'Select After evaluates correctly'
     );
@@ -188,9 +190,9 @@ sub test_002 {
     # Test Select Between
     #############################
     $test->select_between( ['t3_rule2-t3_rule3'] );
-    $test->set_process_rules;
+    $test->set_rule_keys('select');
     is_deeply(
-        $test->process_rule_names,
+        $test->select_rule_keys,
         [ 't3_rule2', 't3_rule3' ],
         'Select Between evaluates correctly'
     );
@@ -199,43 +201,128 @@ sub test_002 {
     #############################
     # Test Match Rules
     #############################
-    $test->match_rules( ['t3'] );
-    $test->set_process_rules;
+    $test->select_match( ['t3'] );
+    $test->set_rule_keys('select');
     is_deeply(
-        $test->process_rule_names,
+        $test->select_rule_keys,
         [ 't3_rule1', 't3_rule2', 't3_rule3' ],
         'Match rules evaluates correctly'
     );
-    $test->match_rules( [] );
+    $test->select_match( [] );
 
     #############################
     # Test Match Rules
     #############################
-    $test->match_rules( ['rule'] );
-    $test->set_process_rules;
+    $test->select_match( ['rule'] );
+    $test->set_rule_keys('select');
     is_deeply(
-        $test->process_rule_names,
+        $test->select_rule_keys,
         [ 't3_rule1', 't3_rule2', 't3_rule3' ],
         'Match rules evaluates correctly'
     );
-    $test->match_rules( [] );
+    $test->select_match( [] );
 
     #############################
     # Test Match Rules
     #############################
-    $test->match_rules( ['t3_rule1'] );
-    $test->set_process_rules;
-    is_deeply( $test->process_rule_names, ['t3_rule1'],
+    $test->select_match( ['t3_rule1'] );
+    $test->set_rule_keys('select');
+    is_deeply( $test->select_rule_keys, ['t3_rule1'],
         'Match rules evaluates correctly' );
-    $test->match_rules( [] );
+    $test->select_match( [] );
 
     #############################
     # Writing some meta
-    #############################
-    $test->get_global_keys;
     $test->write_workflow_meta('start');
 
-    diag($test->outfile);
+    diag( $test->outfile );
+}
+
+sub test_003 {
+    my ( $test, $test_dir, $rules ) = construct_tests;
+
+    #############################
+    $test->set_rule_names();
+    is_deeply( $test->rule_names, [ 't3_rule1', 't3_rule2', 't3_rule3' ] );
+
+    #############################
+    # Test Select Rules
+    #############################
+    $test->omit_rules( [ 't3_rule1', 't3_rule2' ] );
+    $test->set_rule_keys('omit');
+    is_deeply( $test->omit_rule_keys, [ 't3_rule1', 't3_rule2' ] );
+    $test->omit_rules( [] );
+
+    #############################
+    # Test Select Before
+    #############################
+    $test->omit_before('t3_rule2');
+    $test->set_rule_keys('omit');
+    is_deeply( $test->omit_rule_keys, [ 't3_rule1', 't3_rule2' ] );
+    $test->clear_omit_before;
+
+    #############################
+    # Test Select After
+    #############################
+    $test->omit_after('t3_rule2');
+    $test->set_rule_keys('omit');
+    is_deeply(
+        $test->omit_rule_keys,
+        [ 't3_rule2', 't3_rule3' ],
+        'Select After evaluates correctly'
+    );
+    $test->clear_omit_after;
+
+    #############################
+    # Test Select Between
+    #############################
+    $test->omit_between( ['t3_rule2-t3_rule3'] );
+    $test->set_rule_keys('omit');
+    is_deeply(
+        $test->omit_rule_keys,
+        [ 't3_rule2', 't3_rule3' ],
+        'Select Between evaluates correctly'
+    );
+    $test->omit_between( [] );
+
+    #############################
+    # Test Match Rules
+    #############################
+    $test->omit_match( ['t3'] );
+    $test->set_rule_keys('omit');
+    is_deeply(
+        $test->omit_rule_keys,
+        [ 't3_rule1', 't3_rule2', 't3_rule3' ],
+        'Match rules evaluates correctly'
+    );
+    $test->omit_match( [] );
+
+    #############################
+    # Test Match Rules
+    #############################
+    $test->omit_match( ['rule'] );
+    $test->set_rule_keys('omit');
+    is_deeply(
+        $test->omit_rule_keys,
+        [ 't3_rule1', 't3_rule2', 't3_rule3' ],
+        'Match rules evaluates correctly'
+    );
+    $test->omit_match( [] );
+
+    #############################
+    # Test Match Rules
+    #############################
+    $test->omit_match( ['t3_rule1'] );
+    $test->set_rule_keys('omit');
+    is_deeply( $test->omit_rule_keys, ['t3_rule1'],
+        'Match rules evaluates correctly' );
+    $test->omit_match( [] );
+
+    #############################
+    # Writing some meta
+    $test->write_workflow_meta('start');
+
+    diag( $test->outfile );
 }
 
 sub _init_rule {
