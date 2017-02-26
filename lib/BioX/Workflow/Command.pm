@@ -1,10 +1,17 @@
 package BioX::Workflow::Command;
 
-use strict;
-use 5.008_005;
-our $VERSION = '0.01';
+use v5.10;
+our $VERSION = '0.0.1';
+
+use MooseX::App qw(Color);
+
+app_strict 0;
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
 
 1;
+
 __END__
 
 =encoding utf-8

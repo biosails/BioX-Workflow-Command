@@ -5,3 +5,5 @@
 MYMETA.*
 !META.json
 /.prove
+vendor
+local
