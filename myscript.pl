@@ -10,5 +10,4 @@ use Module::CPANfile;
 my $meta = CPAN::Meta->load_file('META.json');
 my $file = Module::CPANfile->from_prereqs($meta->prereqs);
 
-print Dumper($meta->prereqs);
  $file->save('cpanfile');

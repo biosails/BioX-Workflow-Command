@@ -3,14 +3,8 @@ package BioX::Workflow::Command::run;
 use v5.10;
 use MooseX::App::Command;
 
-use File::Path qw(make_path remove_tree);
-use Cwd qw(abs_path getcwd);
-use Data::Dumper;
-use File::Basename;
-use Try::Tiny;
-
+extends 'BioX::Workflow::Command';
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
-use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
 use BioX::Workflow::Command::run::Utils::Directives;
 
 with 'BioX::Workflow::Command::run::Utils::Samples';
@@ -18,6 +12,8 @@ with 'BioX::Workflow::Command::run::Utils::Attributes';
 with 'BioX::Workflow::Command::run::Utils::Rules';
 with 'BioX::Workflow::Command::run::Utils::WriteMeta';
 with 'BioX::Workflow::Command::Utils::Log';
+with 'BioX::Workflow::Command::Utils::Files';
+with 'BioX::Workflow::Command::Utils::Plugin';
 
 command_short_description 'Run your workflow';
 command_long_description
@@ -32,57 +28,6 @@ This is the main class of the `biox-workflow.pl run` command.
 =head2 Command Line Options
 
 =cut
-
-option 'workflow' => (
-    is            => 'rw',
-    isa           => AbsFile,
-    required      => 1,
-    coerce        => 1,
-    documentation => 'Supply a workflow',
-);
-
-option 'outfile' => (
-    is      => 'rw',
-    isa     => 'Str',
-    lazy    => 1,
-    default => sub {
-        my $self     = shift;
-        my $workflow = $self->workflow;
-        my @files    = fileparse( $self->workflow, qr/\.[^.]*/ );
-        my $dt       = DateTime->now(time_zone => 'local');
-        return
-            $files[0] . '_'
-          . $dt->ymd . '_'
-          . $dt->time('-') . '.sh';
-    },
-    documentation => 'Write your workflow to a file',
-);
-
-option 'stdout' => (
-    is            => 'rw',
-    isa           => 'Bool',
-    default       => 0,
-    documentation => 'Write workflows to STDOUT',
-    predicate     => 'has_stdout',
-);
-
-has 'fh' => (
-    is      => 'rw',
-    lazy    => 1,
-    default => sub {
-        my $self = shift;
-        my $fh   = new IO::File;
-        if ( $self->stdout ) {
-            $fh->fdopen( fileno(STDOUT), "w" );
-        }
-        else {
-            $fh->open( "> " . $self->outfile );
-        }
-        return $fh;
-    },
-);
-
-# TODO move these to rules
 
 option 'select_rules' => (
     traits        => ['Array'],
@@ -230,12 +175,6 @@ option 'omit_match' => (
 
 =cut
 
-sub BUILD {
-    my $self = shift;
-
-    # TO do add in configs and plugins
-}
-
 sub execute {
     my $self = shift;
 
@@ -251,41 +190,6 @@ sub execute {
     $self->write_workflow_meta('start');
 
     $self->iterate_rules;
-}
-
-sub load_yaml_workflow {
-    my $self = shift;
-
-    my $cfg;
-    my @files = ( $self->workflow );
-    my $valid = 1;
-
-    $self->app_log->info( 'Loading workflow ' . $self->workflow . ' ...' );
-
-    try {
-        $cfg = Config::Any->load_files( { files => \@files, use_ext => 1 } );
-    }
-    catch {
-        $self->app_log->warn(
-            "Unable to load your workflow. The following error was received.\n"
-        );
-        $self->app_log->warn("$_\n");
-        $valid = 0;
-    };
-
-    $self->app_log->info('Your workflow is valid') if $valid;
-
-    #TODO Add Layering
-    for (@$cfg) {
-        my ( $filename, $config ) = %$_;
-        $self->workflow_data($config);
-    }
-
-    if ( !exists $self->workflow_data->{global} ) {
-        $self->workflow_data->{global} = [];
-    }
-
-    return $valid;
 }
 
 no Moose;

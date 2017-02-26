@@ -1,21 +1,22 @@
 package BioX::Workflow::Command::add;
 
 use v5.10;
+
 use MooseX::App::Command;
+use YAML;
 
-use Storable qw(dclone);
-use YAML::XS;
+extends 'BioX::Workflow::Command';
 
-use MooseX::Types::Path::Tiny qw/Path/;
+with 'BioX::Workflow::Command::Utils::Create';
+with 'BioX::Workflow::Command::Utils::Files';
+with 'BioX::Workflow::Command::Utils::Log';
 
-use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
-
-command_short_description 'Add a rule to an existing workflow';
-command_long_description 'Add a rule to an existing workflow';
+command_short_description 'Create a new workflow';
+command_long_description 'Create a new workflow';
 
 =head1 BioX::Workflow::Command::add
 
-This is the main class of the `biox-workflow.pl new` command.
+This is the main class of the `biox-workflow.pl add` command.
 
 =cut
 
@@ -23,30 +24,32 @@ This is the main class of the `biox-workflow.pl new` command.
 
 =cut
 
-option 'workflow' => (
-    is            => 'rw',
-    isa           => AbsFile,
-    required      => 1,
-    coerce        => 1,
-    documentation => 'Supply a workflow',
-);
-
-option 'rules' => (
-    traits        => ['Array'],
-    is            => 'rw',
-    required      => 0,
-    isa           => ArrayRefOfStrs,
-    documentation => 'Add rules',
-    default       => sub { ['rule1'] },
-    cmd_split     => qr/,/,
-    handles       => {
-        all_rules  => 'elements',
-        has_rules  => 'count',
-        join_rules => 'join',
+option '+outfile' => (
+    default => sub {
+        my $self     = shift;
+        my $workflow = $self->workflow;
+        return "$workflow";
     },
-    cmd_aliases => ['r'],
+    documentation => 'Write your workflow to a file. The default will write it out to the same workflow.',
 );
 
+sub execute {
+    my $self = shift;
 
+    if(! $self->load_yaml_workflow){
+      $self->app_log->warn('Exiting now.');
+      return;
+    }
 
+    $self->app_log->info('Adding rules: '.join(', ', $self->all_rules));
+    my $rules  = $self->add_rules;
+
+    map { push(@{$self->workflow_data->{rules}}, $_ ) } @{$rules};
+
+    $self->fh->print(Dump($self->workflow_data));
+    $self->fh->close;
+}
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
 1;

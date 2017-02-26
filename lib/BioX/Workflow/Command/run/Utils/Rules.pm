@@ -5,6 +5,7 @@ use Storable qw(dclone);
 use Data::Merger qw(merger);
 use Data::Walk;
 use Data::Dumper;
+use File::Path qw(make_path remove_tree);
 
 =head1 Name
 
@@ -17,6 +18,7 @@ Role for Rules
 =cut
 
 # TODO Change this to rules?
+
 has 'rule_keys' => (
     is      => 'rw',
     isa     => 'ArrayRef',
@@ -62,6 +64,8 @@ sub iterate_rules {
         $self->p_local_attr( dclone( $self->local_attr ) );
 
     }
+
+    $self->fh->close();
 }
 
 =head3 filter_rule_keys
@@ -234,14 +238,13 @@ sub sanity_check_rule {
 
     my @keys = keys %{ $self->local_rule };
 
-    #TODO Add app log
     if ( $#keys != 0 ) {
-        die print "You should only have one rule name!\n";
+        $self->app_log->fatal('You should only have one rule name!');
     }
 
     $self->rule_name( $keys[0] );
 
-    warn "Your rule does not have a process!\n"
+    $self->app_log->fatal('Your rule does not have a process!')
       unless exists $self->local_rule->{ $self->rule_name }->{process};
 
     if ( !exists $self->local_rule->{ $self->rule_name }->{local} ) {
@@ -251,7 +254,7 @@ sub sanity_check_rule {
 
     my $ref = $self->local_rule->{ $self->rule_name }->{local};
 
-    die print 'Your variable declarations should begin with an array!'
+    $self->app_log->fatal('Your variable declarations should begin with an array!')
       unless ref($ref) eq 'ARRAY';
 }
 
@@ -340,15 +343,26 @@ sub get_keys {
     $self->rule_keys( \@global_keys );
 }
 
-sub eval_process {
-    my $self = shift;
-
-    my $process = $self->local_rule->{ $self->rule_name }->{process};
+sub walk_attr {
+  my $self = shift;
 
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
     $attr->walk_process_data( $self->rule_keys );
 
+    if($attr->create_outdir){
+      make_path($attr->outdir);
+    }
+
+    return $attr;
+}
+
+sub eval_process {
+    my $self = shift;
+
+    my $attr = $self->walk_attr;
+
+    my $process = $self->local_rule->{ $self->rule_name }->{process};
     my $text = $attr->interpol_directive($process);
 
     return $text;

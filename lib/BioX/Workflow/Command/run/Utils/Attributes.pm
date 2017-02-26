@@ -38,17 +38,6 @@ option 'samples' => (
 
 =cut
 
-=head3 workflow_data
-
-initial config file read into a perl structure
-
-=cut
-
-has 'workflow_data' => (
-    is      => 'rw',
-    isa     => 'HashRef',
-    default => sub { return {} },
-);
 
 =head3 local_rule1
 

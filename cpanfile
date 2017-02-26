@@ -20,6 +20,7 @@ requires 'Moose::Util::TypeConstraints';
 requires 'MooseX::App';
 requires 'MooseX::App::Command';
 requires 'MooseX::App::Role';
+requires 'MooseX::Object::Pluggable';
 requires 'MooseX::Types';
 requires 'MooseX::Types::Moose';
 requires 'MooseX::Types::Path::Tiny';
@@ -48,6 +49,7 @@ on test => sub {
     requires 'Test::Class::Moose::Runner';
     requires 'Test::More', '0.96';
     requires 'Text::Diff';
+    requires 'YAML::XS';
     requires 'strict';
 };
 

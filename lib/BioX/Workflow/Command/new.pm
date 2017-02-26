@@ -4,12 +4,16 @@ use v5.10;
 use MooseX::App::Command;
 
 use Storable qw(dclone);
-# use YAML::XS;
 use YAML;
 
 use MooseX::Types::Path::Tiny qw/Path/;
 
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
+
+extends 'BioX::Workflow::Command';
+
+with 'BioX::Workflow::Command::Utils::Create';
+with 'BioX::Workflow::Command::Utils::Files';
 
 command_short_description 'Create a new workflow';
 command_long_description 'Create a new workflow';
@@ -24,53 +28,15 @@ This is the main class of the `biox-workflow.pl new` command.
 
 =cut
 
-#TODO This is so bad
-
-option 'workflow' => (
-    is            => 'rw',
+option '+workflow' => (
     isa           => Path,
-    required      => 1,
-    coerce        => 1,
-    documentation => 'Supply a workflow',
 );
 
-option 'rules' => (
-    traits        => ['Array'],
-    is            => 'rw',
-    required      => 0,
-    isa           => ArrayRefOfStrs,
-    documentation => 'Add rules',
-    default       => sub { ['rule1'] },
-    cmd_split     => qr/,/,
-    handles       => {
-        all_rules  => 'elements',
-        has_rules  => 'count',
-        join_rules => 'join',
-    },
-    cmd_aliases => ['r'],
-);
-
-option 'stdout' => (
-    is            => 'rw',
-    isa           => 'Bool',
-    default       => 0,
-    documentation => 'Write workflows to STDOUT',
-    predicate     => 'has_stdout',
-);
-
-has 'fh' => (
-    is      => 'rw',
-    lazy    => 1,
+option '+outfile' => (
     default => sub {
         my $self = shift;
-        my $fh   = new IO::File;
-        if ( $self->stdout ) {
-            $fh->fdopen( fileno(STDOUT), "w" );
-        }
-        else {
-            $fh->open( "> " . $self->workflow );
-        }
-        return $fh;
+        my $workflow = $self->workflow;
+        return "$workflow";
     },
 );
 
@@ -89,33 +55,14 @@ sub execute {
             ]
     };
 
-    my $rules = [];
-
-    my @process = (
-        'INDIR: {$self->indir}',
-        'INPUT: {$self->INPUT}',
-        'outdir: {$self->outdir} ',
-        'OUTPUT: {$self->OUTPUT->[0]}',
-    );
-    my $pr = join( "\n", @process );
-
-    my $rule_template = {
-        'local' => [
-            { INPUT  => '{$self->root_dir}/some_input_rule1' },
-            { OUTPUT => ['some_output_rule1'] },
-        ],
-        process => $pr
-    };
-
-    foreach my $rule ( $self->all_rules ) {
-        my $href = { $rule => dclone($rule_template) };
-        push( @{$rules}, $href );
-    }
-
+    my $rules  = $self->add_rules;
     $global->{rules} = $rules;
 
     $self->fh->print(Dump($global));
     $self->fh->close;
 }
+
+no Moose;
+__PACKAGE__->meta->make_immutable;
 
 1;
