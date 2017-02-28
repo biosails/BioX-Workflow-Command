@@ -279,7 +279,12 @@ sub carry_directives {
     $self->local_attr->indir( dclone( $self->p_local_attr->outdir ) );
 
     if ( $self->p_local_attr->has_OUTPUT ) {
+      if(ref($self->p_local_attr->OUTPUT)){
         $self->local_attr->INPUT( dclone( $self->p_local_attr->OUTPUT ) );
+      }
+      else{
+        $self->local_attr->INPUT(  $self->p_local_attr->OUTPUT  );
+      }
     }
 
     $self->local_attr->stash( dclone( $self->p_local_attr->stash ) );
