@@ -123,34 +123,168 @@ sub write_rule_meta {
     $self->fh->say("$self->{comment_char}\n");
 
     return unless $meta eq "before_meta";
+    $self->fh->say("$self->{comment_char}");
     $self->fh->say("$self->{comment_char} Starting $self->{rule_name}");
-    $self->fh->say("$self->{comment_char}\n");
+    $self->fh->say("$self->{comment_char}");
 
-    return unless $self->verbose;
+    # return unless $self->verbose;
 
-    $self->fh->say("\n\n$self->{comment_char}");
-    $self->fh->say("$self->{comment_char} Variables");
-    $self->fh->say(
-        "$self->{comment_char} Indir: " . $self->local_attr->indir );
-    $self->fh->say(
-        "$self->{comment_char} Outdir: " . $self->local_attr->outdir );
+    if ( $self->verbose ) {
 
-    if ( exists $self->local_rule->{ $self->rule_name }->{local} ) {
+        $self->fh->say("\n\n$self->{comment_char}");
+        $self->fh->say("$self->{comment_char} Variables");
+        $self->fh->say(
+            "$self->{comment_char} Indir: " . $self->local_attr->indir );
+        $self->fh->say(
+            "$self->{comment_char} Outdir: " . $self->local_attr->outdir );
 
-        $self->fh->say("$self->{comment_char} Local Variables:\n");
+        if ( exists $self->local_rule->{ $self->rule_name }->{local} ) {
 
-        foreach my $k ( $self->all_local_rule_keys ) {
-            my ($v) = $self->local_attr->$k;
-            $self->fh->print( $self->write_pretty_meta( $k, $v ) );
+            $self->fh->say("$self->{comment_char}");
+            $self->fh->say("$self->{comment_char} Local Variables:\n#");
+
+            foreach my $k ( $self->all_local_rule_keys ) {
+                my ($v) = $self->local_attr->$k;
+                $self->fh->print( $self->write_pretty_meta( $k, $v ) );
+            }
         }
+
+        $self->write_sample_meta if $self->resample;
     }
 
-    $self->write_sample_meta if $self->resample;
+    if ( $self->local_attr->has_before_meta ) {
+        $self->fh->say("$self->{comment_char}\n");
+        $self->fh->say("$self->{comment_char}");
+        $self->write_hpc_meta;
+        my @tmp_before_meta = split( "\n", $self->local_attr->before_meta );
+
+        map { $self->fh->say("$self->{comment_char}$_") } @tmp_before_meta;
+    }
 
     $self->fh->say("$self->{comment_char}\n\n");
 }
 
-=head2 write_sample_meta
+=head3 write_hpc_meta
+
+=cut
+
+sub write_hpc_meta {
+    my $self = shift;
+
+    $self->local_attr->add_before_meta(' HPC Directives'."\n");
+    if ( ref( $self->local_attr->HPC ) eq 'HASH' ) {
+        $self->write_hpc_hash_meta;
+    }
+    elsif ( ref( $self->local_attr->HPC ) eq 'ARRAY' ) {
+        $self->write_hpc_array_meta;
+    }
+}
+
+=head3 write_hpc_hash_meta
+
+Write meta when HPC is a HashRef
+
+=cut
+
+sub write_hpc_hash_meta {
+    my $self = shift;
+
+    my $jobname = '';
+    if ( !exists $self->local_attr->HPC->{jobname} ) {
+        $self->local_attr->add_before_meta(
+            'HPC jobname=' . $self->rule_name . "\n" );
+        $jobname = $self->rule_name;
+    }
+    else {
+        $self->local_attr->add_before_meta(
+            'HPC jobname=' . $self->local_attr->HPC->{jobname} . "\n" );
+        $jobname = $self->local_attr->HPC->{jobname};
+        delete $self->local_attr->HPC->{jobname};
+    }
+
+    $self->iter_hpc_hash( $self->local_attr->HPC );
+    $self->local_attr->HPC->{jobname} = $jobname;
+}
+
+=head3 write_hpc_array_meta
+
+Write meta when HPC is an ArrayRef
+
+=cut
+
+sub write_hpc_array_meta {
+    my $self = shift;
+
+    #First we look for keys to see if we get jobname
+
+    my %lookup = ();
+    foreach my $href ( @{ $self->local_attr->HPC } ) {
+        if ( ref($href) eq 'HASH' ) {
+          my @keys = keys %{$href};
+          map { $lookup{$_} = $href->{$_}} @keys;
+        }
+        else {
+            $self->warn_hpc_meta;
+            return;
+        }
+    }
+
+    if ( !exists $lookup{jobname} ) {
+        $self->local_attr->add_before_meta(
+            'HPC jobname=' . $self->rule_name . "\n" );
+        unshift(@{$self->local_attr->HPC}, {'jobname' => $self->rule_name});
+    }
+    else {
+        $self->local_attr->add_before_meta(
+            'HPC jobname=' . $lookup{jobname} . "\n" );
+        delete $lookup{jobname};
+    }
+
+    $self->iter_hpc_hash( \%lookup );
+}
+
+=head3 iter_hpc_hash
+
+=cut
+
+sub iter_hpc_hash {
+    my $self = shift;
+    my $href = shift;
+
+    while ( my ( $k, $v ) = each %{$href} ) {
+        if ( !ref($k) ) {
+            $self->local_attr->add_before_meta( 'HPC ' . $k . '=' . $v . "\n" );
+        }
+        else {
+            $self->warn_hpc_meta;
+        }
+    }
+}
+
+sub warn_hpc_meta {
+    my $self = shift;
+
+    my $hpc = <<EOF;
+Key/Value:
+
+ HPC:
+     - mem: 40GB
+     - walltime: '02:00:00'
+
+List of Key/Value:
+ HPC:
+     - mem: 40GB
+     - walltime: '02:00:00'
+EOF
+    $self->app_log->warn(
+        'You are using an unsupported data structure for HPC.');
+    $self->app_log->warn('HPC should be key/value or a list of key/value');
+    $self->app_log->warn(
+        'HPC data structure should look resemble the following:' . "\n"
+          . $hpc );
+}
+
+=head3 write_sample_meta
 
 Write the meta for samples
 
@@ -170,7 +304,8 @@ sub write_sample_meta {
     );
     $self->fh->say("$self->{comment_char}\n");
 
-    $self->app_log->info('Found samples: '.join(', ', @{$self->samples}));
+    $self->app_log->info(
+        'Found samples: ' . join( ', ', @{ $self->samples } ) );
 }
 
 sub write_pretty_meta {

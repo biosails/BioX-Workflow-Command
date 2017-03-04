@@ -97,7 +97,7 @@ sub set_rule_names {
 
     my @rule_names = map { my ($key) = keys %{$_}; $key } @{$rules};
     $self->rule_names( \@rule_names );
-    $self->app_log->info( 'Found rules ' . join( ', ', @rule_names ) );
+    $self->app_log->info( 'Found rules ' . join( ', ', @rule_names ) ."\n");
 }
 
 =head3 set_rule_keys
@@ -110,8 +110,8 @@ sub set_rule_keys {
     my $self = shift;
     my $cond = shift || 'select';
 
-    my @rules       = ();
-    my $rule_exists = 1;
+    my @rules            = ();
+    my $rule_exists      = 1;
     my @rule_name_exists = ();
 
     my ( $has_rules, $has_bf, $has_af, $has_btw, $has_match ) =
@@ -134,7 +134,7 @@ sub set_rule_keys {
                 $self->app_log->warn(
                     "You selected a rule $r that does not exist");
                 $rule_exists = 0;
-                push(@rule_name_exists, $r);
+                push( @rule_name_exists, $r );
             }
         }
     }
@@ -147,7 +147,7 @@ sub set_rule_keys {
                   . $self->$bf
                   . " that does not exist" );
             $rule_exists = 0;
-            push(@rule_name_exists, $self->$bf);
+            push( @rule_name_exists, $self->$bf );
         }
         for ( my $x = 0 ; $x <= $index ; $x++ ) {
             push( @rules, $self->rule_names->[$x] );
@@ -162,7 +162,7 @@ sub set_rule_keys {
                   . $self->$af
                   . " that does not exist" );
             $rule_exists = 0;
-            push(@rule_name_exists, $self->$af);
+            push( @rule_name_exists, $self->$af );
         }
         for ( my $x = $index ; $x < $self->has_rule_names ; $x++ ) {
             push( @rules, $self->rule_names->[$x] );
@@ -184,7 +184,7 @@ sub set_rule_keys {
                       . join( ',', $self->$btw )
                       . " that does not exist" );
                 $rule_exists = 0;
-                push(@rule_name_exists, $rule);
+                push( @rule_name_exists, $rule );
             }
 
             for ( my $x = $index1 ; $x <= $index2 ; $x++ ) {
@@ -200,7 +200,7 @@ sub set_rule_keys {
     }
 
     $self->$rule_keys( \@rules ) if @rules;
-    return ($rule_exists, @rule_name_exists);
+    return ( $rule_exists, @rule_name_exists );
 }
 
 =head3 process_rule
@@ -238,24 +238,68 @@ sub sanity_check_rule {
 
     my @keys = keys %{ $self->local_rule };
 
+    $self->app_log->info('Beginning sanity check for rule...');
     if ( $#keys != 0 ) {
         $self->app_log->fatal('You should only have one rule name!');
-    }
-
-    $self->rule_name( $keys[0] );
-
-    $self->app_log->fatal('Your rule does not have a process!')
-      unless exists $self->local_rule->{ $self->rule_name }->{process};
-
-    if ( !exists $self->local_rule->{ $self->rule_name }->{local} ) {
-        $self->local_rule->{ $self->rule_name }->{local} = [];
+        $self->sanity_check_fail;
         return;
     }
 
-    my $ref = $self->local_rule->{ $self->rule_name }->{local};
+    $self->rule_name( $keys[0] );
+    $self->app_log->info( 'Sanity check on rule ' . $self->rule_name );
 
-    $self->app_log->fatal('Your variable declarations should begin with an array!')
-      unless ref($ref) eq 'ARRAY';
+    if ( !exists $self->local_rule->{ $self->rule_name }->{process} ) {
+        $self->app_log->fatal('Your rule does not have a process!');
+        $self->sanity_check_fail;
+        return;
+    }
+
+    if ( !exists $self->local_rule->{ $self->rule_name }->{local} ) {
+        $self->local_rule->{ $self->rule_name }->{local} = [];
+    }
+    else {
+        my $ref = $self->local_rule->{ $self->rule_name }->{local};
+
+        if ( !ref($ref) eq 'ARRAY' ) {
+            $self->app_log->fatal(
+                'Your variable declarations should begin with an array!');
+            $self->sanity_check_fail;
+            return;
+        }
+    }
+
+    $self->app_log->info(
+        'Rule : ' . $self->rule_name . ' passes sanity check' );
+}
+
+sub sanity_check_fail {
+    my $self = shift;
+
+    my $rule_example = <<EOF;
+global:
+    - indir: data/raw
+    - outdir: data/processed
+    - file_rule: (sample.*)$
+    - by_sample_outdir: 1
+    - sample_bydir: 1
+    - copy1:
+        local:
+            - indir: '{\$self->my_dir}'
+            - INPUT: '{\$self->indir}/{\$sample}.csv'
+            - HPC:
+                - mem: '40GB'
+                - walltime: '40GB'
+        process: |
+            echo 'MyDir on {\$self->my_dir}'
+            echo 'Indir on {\$self->indir}'
+            echo 'Outdir on {\$self->outdir}'
+            echo 'INPUT on {\$self->INPUT}'
+EOF
+    $self->app_log->fatal('Skipping this rule.');
+    $self->app_log->fatal(
+'Here is an example workflow. For more information please see biox-workflow.pl new --help.'
+    );
+    $self->app_log->fatal($rule_example);
 }
 
 =head3 carry_directives
@@ -279,12 +323,12 @@ sub carry_directives {
     $self->local_attr->indir( dclone( $self->p_local_attr->outdir ) );
 
     if ( $self->p_local_attr->has_OUTPUT ) {
-      if(ref($self->p_local_attr->OUTPUT)){
-        $self->local_attr->INPUT( dclone( $self->p_local_attr->OUTPUT ) );
-      }
-      else{
-        $self->local_attr->INPUT(  $self->p_local_attr->OUTPUT  );
-      }
+        if ( ref( $self->p_local_attr->OUTPUT ) ) {
+            $self->local_attr->INPUT( dclone( $self->p_local_attr->OUTPUT ) );
+        }
+        else {
+            $self->local_attr->INPUT( $self->p_local_attr->OUTPUT );
+        }
     }
 
     $self->local_attr->stash( dclone( $self->p_local_attr->stash ) );
@@ -307,7 +351,7 @@ sub template_process {
 
         $self->local_attr->sample($sample);
         my $text = $self->eval_process($print_rule);
-        $self->fh->print($text) if $print_rule;
+        $self->fh->say($text) if $print_rule;
 
     }
 }
@@ -349,14 +393,14 @@ sub get_keys {
 }
 
 sub walk_attr {
-  my $self = shift;
+    my $self = shift;
 
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
     $attr->walk_process_data( $self->rule_keys );
 
-    if($attr->create_outdir){
-      make_path($attr->outdir);
+    if ( $attr->create_outdir ) {
+        make_path( $attr->outdir );
     }
 
     return $attr;
@@ -368,7 +412,7 @@ sub eval_process {
     my $attr = $self->walk_attr;
 
     my $process = $self->local_rule->{ $self->rule_name }->{process};
-    my $text = $attr->interpol_directive($process);
+    my $text    = $attr->interpol_directive($process);
 
     return $text;
 }
@@ -401,7 +445,7 @@ sub print_rule {
         $print_rule = 0;
     }
 
-    $self->app_log->info( 'Processing rule ' . $self->rule_name )
+    $self->app_log->info( 'Processing rule ' . $self->rule_name . "\n" )
       if $print_rule;
 
     return $print_rule;
