@@ -199,6 +199,19 @@ has 'errors' => (
     default => 0,
 );
 
+has 'before_meta' => (
+    traits  => ['String'],
+    is      => 'rw',
+    isa     => 'Str',
+    default => q{},
+    predicate => 'has_before_meta',
+    required => 0,
+    handles => {
+      add_before_meta     => 'append',
+      replace_before_meta => 'replace',
+    },
+);
+
 has 'is_select' => (
     traits => ['Bool'],
     isa     => 'Bool',
@@ -208,6 +221,12 @@ has 'is_select' => (
       deselect => 'unset',
       select => 'set',
     },
+);
+
+has 'HPC' => (
+  is => 'rw',
+  isa => 'HashRef|ArrayRef',
+  default => sub {{}}
 );
 
 =head2 stash
@@ -510,6 +529,7 @@ sub update_directive {
         #We are getting the whole hash, just return
         return;
     }
+    
 }
 
 no Moose;

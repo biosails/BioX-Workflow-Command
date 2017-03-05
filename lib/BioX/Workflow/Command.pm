@@ -1,5 +1,7 @@
 package BioX::Workflow::Command;
 
+use IO::Interactive;
+
 use v5.10;
 our $VERSION = '0.0.1';
 

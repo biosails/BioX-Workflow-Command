@@ -49,6 +49,7 @@
             "File::Path" : "0",
             "File::Spec" : "0",
             "IO::File" : "0",
+            "IO::Interactive" : "0",
             "List::Compare" : "0",
             "List::Uniq" : "0",
             "Log::Log4perl" : "0",
@@ -80,6 +81,7 @@
          "requires" : {
             "Capture::Tiny" : "0",
             "File::Spec::Functions" : "0",
+            "IO::Interactive" : "0",
             "FindBin" : "0",
             "Test::Class::Moose" : "0",
             "Test::Class::Moose::Load" : "0",

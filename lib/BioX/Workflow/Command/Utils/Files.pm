@@ -90,7 +90,7 @@ sub load_yaml_workflow {
         $valid = 0;
     };
 
-    $self->app_log->info('Your workflow is valid') if $valid;
+    $self->app_log->info('Your workflow is valid'."\n") if $valid;
 
     #TODO Add Layering
     for (@$cfg) {
