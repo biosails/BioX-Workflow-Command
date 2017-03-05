@@ -4,7 +4,7 @@
       "Jillian Rowe <jillian.e.rowe@gmail.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Milla version v1.0.16, Dist::Zilla version 6.007, CPAN::Meta::Converter version 2.150001",
+   "generated_by" : "Dist::Milla version v1.0.17, Dist::Zilla version 6.008, CPAN::Meta::Converter version 2.150001",
    "license" : [
       "perl_5"
    ],
@@ -49,6 +49,7 @@
             "File::Path" : "0",
             "File::Spec" : "0",
             "IO::File" : "0",
+            "IO::Interactive" : "0",
             "List::Compare" : "0",
             "List::Uniq" : "0",
             "Log::Log4perl" : "0",
@@ -104,6 +105,6 @@
       }
    },
    "version" : "0.0.1",
-   "x_serialization_backend" : "Cpanel::JSON::XS version 3.0217"
+   "x_serialization_backend" : "Cpanel::JSON::XS version 3.0225"
 }
 
