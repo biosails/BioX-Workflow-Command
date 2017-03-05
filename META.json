@@ -81,6 +81,7 @@
          "requires" : {
             "Capture::Tiny" : "0",
             "File::Spec::Functions" : "0",
+            "IO::Interactive" : "0",
             "FindBin" : "0",
             "Test::Class::Moose" : "0",
             "Test::Class::Moose::Load" : "0",
