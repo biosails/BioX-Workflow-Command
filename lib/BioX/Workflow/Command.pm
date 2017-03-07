@@ -21,10 +21,8 @@ option 'cache_dir' => (
     },
     documentation =>
       'BioX-Workflow will cache some information during your runs. '
-      . 'The default is the cwd/.biox-cache. ' . '
-If you prefer this in a different location please specify '
-      . 'with --cache_dir. '
-      . 'Please do not delete this directory unless you are sure you are finished with an analysis.'
+      . 'Delete with caution! '
+      . '[Default: '.getcwd().'/biox-cache. ]'
 );
 
 sub BUILD { }
