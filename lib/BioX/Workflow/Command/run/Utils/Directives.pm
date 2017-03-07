@@ -529,7 +529,7 @@ sub update_directive {
         #We are getting the whole hash, just return
         return;
     }
-    
+
 }
 
 no Moose;

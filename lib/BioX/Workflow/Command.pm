@@ -1,13 +1,39 @@
 package BioX::Workflow::Command;
 
-use IO::Interactive;
-
 use v5.10;
 our $VERSION = '0.0.1';
 
 use MooseX::App qw(Color);
+use MooseX::Types::Path::Tiny qw/Path/;
+use Cwd qw(getcwd);
+use File::Spec;
+use File::Path qw(make_path);
 
 app_strict 0;
+
+# TODO move this after I have a better idea of where it is going
+option 'cache_dir' => (
+    is      => 'rw',
+    isa     => Path,
+    coerce  => 1,
+    default => sub {
+        return File::Spec->catfile( getcwd(), '.biox-cache' );
+    },
+    documentation =>
+      'BioX-Workflow will cache some information during your runs. '
+      . 'The default is the cwd/.biox-cache. ' . '
+If you prefer this in a different location please specify '
+      . 'with --cache_dir. '
+      . 'Please do not delete this directory unless you are sure you are finished with an analysis.'
+);
+
+sub BUILD { }
+
+after 'BUILD' => sub {
+    my $self = shift;
+
+    make_path( $self->cache_dir );
+};
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
