@@ -146,6 +146,7 @@ sub test_001 {
     is_deeply( $expect_select_rule_keys,  $test->select_rule_keys );
     is_deeply( $test->seen_modify->{all}, $expect_seen_modify );
 
+    is_deeply($test->select_rule_keys, ['t3_rule1']);
     my $outfile = read_file( $test->outfile );
 
     my $expect_log = <<EOF;
@@ -173,6 +174,7 @@ sub test_002 {
 
     diag( 'testing for file ' . $file );
 
+    $test->use_timestamps(1);
     $test->track_files->{$file}->{mtime} = $dt;
 
     #############################
@@ -194,7 +196,9 @@ sub test_002 {
         $test->fh->close;
     };
 
-    like( $stderr, qr/No modified files were found/, );
+    is_deeply($test->select_rule_keys, ['t3_rule1']);
+    diag(Dumper($test->select_rule_keys));
+    # like( $stderr, qr/No modified files were found/, );
     ok(1);
 }
 
