@@ -114,54 +114,71 @@ sub write_rule_meta {
     my $self = shift;
     my $meta = shift;
 
-    $self->fh->say("\n$self->{comment_char}");
+    my @meta_text = ();
+
+    push( @meta_text, "\n$self->{comment_char}" );
 
     if ( $meta eq "after_meta" ) {
-        $self->fh->say("$self->{comment_char} Ending $self->{key}");
+
+        push( @meta_text, "$self->{comment_char} Ending $self->{key}" );
     }
 
-    $self->fh->say("$self->{comment_char}\n");
+    push( @meta_text, "$self->{comment_char}\n" );
 
-    return unless $meta eq "before_meta";
-    $self->fh->say("$self->{comment_char}");
-    $self->fh->say("$self->{comment_char} Starting $self->{rule_name}");
-    $self->fh->say("$self->{comment_char}");
+    return \@meta_text unless $meta eq "before_meta";
 
-    # return unless $self->verbose;
+    push( @meta_text, "$self->{comment_char}" );
+    push( @meta_text, "$self->{comment_char} Starting $self->{rule_name}" );
+    push( @meta_text, "$self->{comment_char}" );
 
-    if ( $self->verbose ) {
+    return \@meta_text unless $self->verbose;
 
-        $self->fh->say("\n\n$self->{comment_char}");
-        $self->fh->say("$self->{comment_char} Variables");
-        $self->fh->say(
-            "$self->{comment_char} Indir: " . $self->local_attr->indir );
-        $self->fh->say(
-            "$self->{comment_char} Outdir: " . $self->local_attr->outdir );
+    push( @meta_text, "\n\n$self->{comment_char}" );
 
-        if ( exists $self->local_rule->{ $self->rule_name }->{local} ) {
+    push( @meta_text, "$self->{comment_char} Variables" );
 
-            $self->fh->say("$self->{comment_char}");
-            $self->fh->say("$self->{comment_char} Local Variables:\n#");
+    push( @meta_text,
+        "$self->{comment_char} Indir: " . $self->local_attr->indir );
 
-            foreach my $k ( $self->all_local_rule_keys ) {
-                my ($v) = $self->local_attr->$k;
-                $self->fh->print( $self->write_pretty_meta( $k, $v ) );
-            }
+    push( @meta_text,
+        "$self->{comment_char} Outdir: " . $self->local_attr->outdir );
+
+    if ( exists $self->local_rule->{ $self->rule_name }->{local} ) {
+
+        push( @meta_text, "$self->{comment_char}" );
+
+        push( @meta_text, "$self->{comment_char} Local Variables:\n#" );
+
+        foreach my $k ( $self->all_local_rule_keys ) {
+            my ($v) = $self->local_attr->$k;
+
+            push( @meta_text, $self->write_pretty_meta( $k, $v ) );
         }
-
-        $self->write_sample_meta if $self->resample;
     }
 
-    if ( $self->local_attr->has_before_meta ) {
-        $self->fh->say("$self->{comment_char}\n");
-        $self->fh->say("$self->{comment_char}");
-        $self->write_hpc_meta;
-        my @tmp_before_meta = split( "\n", $self->local_attr->before_meta );
+    my $t = $self->write_sample_meta if $self->resample;
+    push( @meta_text, $t ) if $t;
 
-        map { $self->fh->say("$self->{comment_char}$_") } @tmp_before_meta;
-    }
+    $self->write_hpc_meta;
 
-    $self->fh->say("$self->{comment_char}\n\n");
+    push( @meta_text, "$self->{comment_char}\n" );
+
+    push( @meta_text, "$self->{comment_char}" );
+    my @tmp_before_meta = split( "\n", $self->local_attr->before_meta );
+
+    map { push( @meta_text, "$self->{comment_char}" . trim($_) ) }
+      @tmp_before_meta;
+
+    push( @meta_text, "$self->{comment_char}\n\n" );
+
+    return \@meta_text;
+}
+
+sub trim {
+    my $text = shift;
+
+    $text =~ s/^\s+|\s+$//g;
+    return $text;
 }
 
 =head3 write_hpc_meta
@@ -171,7 +188,9 @@ sub write_rule_meta {
 sub write_hpc_meta {
     my $self = shift;
 
-    $self->local_attr->add_before_meta(' HPC Directives'."\n");
+    #TODO add HPC deps
+
+    $self->local_attr->add_before_meta( ' HPC Directives' . "\n" );
     if ( ref( $self->local_attr->HPC ) eq 'HASH' ) {
         $self->write_hpc_hash_meta;
     }
@@ -220,8 +239,8 @@ sub write_hpc_array_meta {
     my %lookup = ();
     foreach my $href ( @{ $self->local_attr->HPC } ) {
         if ( ref($href) eq 'HASH' ) {
-          my @keys = keys %{$href};
-          map { $lookup{$_} = $href->{$_}} @keys;
+            my @keys = keys %{$href};
+            map { $lookup{$_} = $href->{$_} } @keys;
         }
         else {
             $self->warn_hpc_meta;
@@ -232,7 +251,10 @@ sub write_hpc_array_meta {
     if ( !exists $lookup{jobname} ) {
         $self->local_attr->add_before_meta(
             'HPC jobname=' . $self->rule_name . "\n" );
-        unshift(@{$self->local_attr->HPC}, {'jobname' => $self->rule_name});
+        unshift(
+            @{ $self->local_attr->HPC },
+            { 'jobname' => $self->rule_name }
+        );
     }
     else {
         $self->local_attr->add_before_meta(
@@ -268,8 +290,8 @@ sub warn_hpc_meta {
 Key/Value:
 
  HPC:
-     - mem: 40GB
-     - walltime: '02:00:00'
+     mem: 40GB
+     walltime: '02:00:00'
 
 List of Key/Value:
  HPC:
@@ -296,16 +318,17 @@ sub write_sample_meta {
     my $self = shift;
 
     return unless $self->verbose;
+    my $meta_text = "";
 
-    $self->fh->say("$self->{comment_char}");
-    $self->fh->print(
-        "$self->{comment_char} Samples: ",
-        join( ', ', @{ $self->samples } ) . "\n"
-    );
-    $self->fh->say("$self->{comment_char}\n");
+    $meta_text .= "$self->{comment_char}\n";
+    $meta_text .= "$self->{comment_char} Samples: "
+      . join( ', ', @{ $self->samples } ) . "\n";
+    $meta_text .= "$self->{comment_char}\n\n";
 
     $self->app_log->info(
-        'Found samples: ' . join( ', ', @{ $self->samples } ) );
+        'Found samples: ' . join( ', ', @{ $self->samples } ) . "\n" );
+
+    return $meta_text;
 }
 
 sub write_pretty_meta {

@@ -1,11 +1,11 @@
 package BioX::Workflow::Command::run::Utils::Samples;
 
+use MooseX::App::Role;
 use File::Find::Rule;
 use File::Basename;
 use List::Uniq ':all';
 use Data::Walk;
 
-use MooseX::App::Role;
 use Storable qw(dclone);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
 use Path::Tiny;
@@ -42,10 +42,9 @@ Infiles to be processed
 =cut
 
 has 'sample_files' => (
-    is     => 'rw',
-    isa    => 'ArrayRef',
+    is  => 'rw',
+    isa => 'ArrayRef',
 );
-
 
 =head2 by_sample_outdir
 
@@ -82,13 +81,14 @@ Our samples to process. They are either found through sample_rule, or passed as 
 
 =cut
 
-has 'samples' => (
-    traits   => ['Array'],
-    is       => 'rw',
-    isa      => 'ArrayRef',
-    default  => sub { [] },
-    required => 0,
-    handles  => {
+option 'samples' => (
+    traits    => ['Array'],
+    is        => 'rw',
+    isa       => 'ArrayRef',
+    default   => sub { [] },
+    required  => 0,
+    cmd_split => qr/,/,
+    handles   => {
         all_samples    => 'elements',
         add_sample     => 'push',
         map_samples    => 'map',
@@ -102,7 +102,7 @@ has 'samples' => (
         sorted_samples => 'sort',
     },
     documentation =>
-        q{Supply samples on the command line as --samples sample1 --samples sample2, or find through sample_rule.}
+q{Supply samples on the command line as --samples sample1 --samples sample2, or find through sample_rule.}
 );
 
 =head3 sample
@@ -111,27 +111,14 @@ Each time we get the sample we set it.
 
 =cut
 
-has 'sample'=> (
-    is => 'rw',
-    isa => 'Str',
-    required => 0,
-    default => '',
+has 'sample' => (
+    is        => 'rw',
+    isa       => 'Str',
+    required  => 0,
+    default   => '',
     predicate => 'has_sample',
 );
 
-=head3 sample_rule
-
-Rule to find files/samples
-
-=cut
-
-has 'sample_rule' => (
-    is        => 'rw',
-    isa       => 'Str',
-    default   => sub { return "(.*)"; },
-    clearer   => 'clear_sample_rule',
-    predicate => 'has_sample_rule',
-);
 
 =head2 Subroutines
 
@@ -173,12 +160,12 @@ sub get_samples {
     #We need to evaluate the global_dirs incase the indir has a var
     #But we don't keep it around, because that would be madness
     #TODO Fix this we should process these the same way we process rule names
-    $attr = dclone($self->global_attr);
+    $attr = dclone( $self->global_attr );
     if ( $attr->indir =~ m/\{\$self/ ) {
-      $attr->walk_process_data( $self->global_keys );
+        $attr->walk_process_data( $self->global_keys );
     }
 
-    $text = $self->sample_rule;
+    $text = $self->global_attr->sample_rule;
 
     if ( $attr->sample_bydir ) {
         @whole = find(
@@ -187,13 +174,15 @@ sub get_samples {
             in        => $attr->indir
         );
 
-        if($whole[0] eq $attr->indir){
-          shift(@whole);
-        }
+        if (@whole) {
+            if ( $whole[0] eq $attr->indir ) {
+                shift(@whole);
+            }
 
-        #File find puts directory we are looking in, not just subdirs
-        @basename = map  { basename($_) } @whole;
-        @basename = sort(@basename);
+            #File find puts directory we are looking in, not just subdirs
+            @basename = map { basename($_) } @whole;
+            @basename = sort(@basename);
+        }
     }
     else {
         @whole = find(
@@ -211,14 +200,18 @@ sub get_samples {
     @sample_files = sort(@sample_files);
 
     #Throw error if sample don't exist
-    $self->samples( \@basename ) if @basename;
+    $self->samples( \@basename )          if @basename;
     $self->sample_files( \@sample_files ) if @sample_files;
 
-    $self->global_attr->samples(dclone($self->samples));
+    $self->global_attr->samples( dclone( $self->samples ) );
+
+    if ( $self->has_no_samples ) {
+        $self->app_log->warn('No samples were found!');
+        $self->app_log->warn( "Indir: " . $attr->indir . "\tSearch: " . $text."\n" );
+    }
 
     $self->write_sample_meta;
 }
-
 
 =head2 match_samples
 
