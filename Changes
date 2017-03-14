@@ -1,4 +1,5 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
-        - Initial release
+        - Adding in auto_deps - automatically decide dependnecy from INPUT/OUTPUT
+        - Adding in use_timestamps - Decide select_rules by last modified time 
