@@ -97,6 +97,8 @@ sub print_process_workflow {
 
 If using select_rules comment out the #HPC deps portion on the first rule
 
+#TODO add this in to iter_hash_hpc instead of here, account for select_btwn
+
 =cut
 
 sub dedeps {
