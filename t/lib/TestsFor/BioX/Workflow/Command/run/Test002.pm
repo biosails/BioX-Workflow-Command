@@ -22,7 +22,7 @@ sub write_test_file {
             { root_dir      => 'data/raw' },
             { indir         => '{$self->root_dir}' },
             { outdir        => 'data/processed' },
-            { sample_rule   => "Sample_(\\w+)" },
+            { sample_rule   => "(Sample_.*)" },
             { gatk          => '{$self->outdir}/{$sample}/gatk' },
             { some_array    => [ 'one', 'two' ] },
             { some_hash     => { 'banana' => 'yellow', 'apple' => 'red' } },
@@ -259,6 +259,7 @@ sub test_eval_process {
     $rule = $rules->[0];
     _init_rule( $test, $rule );
 
+    $test->sample( $test->samples->[0] );
     $test->local_attr->sample( $test->samples->[0] );
     $text = $test->eval_process;
 
@@ -275,6 +276,7 @@ sub test_eval_process {
     $rule = $rules->[1];
     _init_rule( $test, $rule );
 
+    $test->sample( $test->samples->[0] );
     $test->local_attr->sample( $test->samples->[0] );
     $text = $test->eval_process;
 

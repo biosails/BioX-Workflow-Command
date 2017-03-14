@@ -8,7 +8,6 @@ has 'app_log' => (
     is      => 'rw',
     default => sub {
         my $self = shift;
-
         Log::Log4perl->init( \ <<'EOT');
   log4perl.category = DEBUG, Screen
   log4perl.appender.Screen = \
@@ -19,7 +18,8 @@ has 'app_log' => (
       [%d] %m %n
 EOT
         return get_logger();
-    }
+    },
+    lazy => 1,
 );
 
 1;
