@@ -67,6 +67,7 @@ sub post_process_rules {
         $self->check_input_output($rule);
     }
 
+    $self->dedeps;
     $self->process_auto_deps;
 
     $self->print_process_workflow;
@@ -76,6 +77,7 @@ sub print_process_workflow {
     my $self = shift;
 
     foreach my $rule ( $self->all_rule_names ) {
+
         #TODO This should be named select_rule_names
         my $index = $self->first_index_select_rule_keys( sub { $_ eq $rule } );
         next if $index == -1;
@@ -85,9 +87,33 @@ sub print_process_workflow {
         my $text = $self->process_obj->{$rule}->{text} || [];
 
         map { $self->fh->say($_) } @{$meta};
+        $self->fh->say("");
         map { $self->fh->say($_) } @{$text};
 
     }
+}
+
+=head3 dedeps
+
+If using select_rules comment out the #HPC deps portion on the first rule
+
+=cut
+
+sub dedeps {
+    my $self = shift;
+
+    return unless $self->has_select_rule_keys;
+    return unless $self->select_effect;
+
+    my $first_rule = $self->select_rule_keys->[0];
+
+    my $meta = $self->process_obj->{$first_rule}->{meta};
+    $meta = [] unless $meta;
+    my $before_meta = join( "\n", @{$meta} );
+
+    $before_meta =~ s/#HPC deps=/##HPC deps=/g;
+    my @text = split( "\n", $before_meta );
+    $self->process_obj->{$first_rule}->{meta} = \@text;
 }
 
 =head3
@@ -107,8 +133,7 @@ sub process_auto_deps {
 
     return unless $self->auto_deps;
 
-    foreach my $rule ( $self->select_rule_keys ) {
-
+    foreach my $rule ( $self->all_select_rule_keys ) {
 
         $self->graph->{$rule} = [] if !exists $self->graph->{$rule};
         my $meta = $self->process_obj->{$rule}->{meta};
@@ -121,7 +146,7 @@ sub process_auto_deps {
         my @deps = @{ $self->graph->{$rule} };
         if (@deps) {
             chomp($before_meta);
-            $before_meta .= "\n#HPC deps=" . join( ',', @deps );
+            $before_meta .= "\n#HPC deps=" . join( ',', @deps )."\n\n";
         }
         my @text = split( "\n", $before_meta );
         $self->process_obj->{$rule}->{meta} = \@text;

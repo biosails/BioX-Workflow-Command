@@ -169,7 +169,7 @@ sub write_rule_meta {
     map { push( @meta_text, "$self->{comment_char}" . trim($_) ) }
       @tmp_before_meta;
 
-    push( @meta_text, "$self->{comment_char}\n\n" );
+    push( @meta_text, "$self->{comment_char}\n" );
 
     return \@meta_text;
 }
@@ -190,7 +190,7 @@ sub write_hpc_meta {
 
     #TODO add HPC deps
 
-    $self->local_attr->add_before_meta( ' HPC Directives' . "\n" );
+    $self->local_attr->add_before_meta( ' ### HPC Directives' . "\n" );
     if ( ref( $self->local_attr->HPC ) eq 'HASH' ) {
         $self->write_hpc_hash_meta;
     }
@@ -262,6 +262,8 @@ sub write_hpc_array_meta {
         delete $lookup{jobname};
     }
 
+
+
     $self->iter_hpc_hash( \%lookup );
 }
 
@@ -273,6 +275,8 @@ sub iter_hpc_hash {
     my $self = shift;
     my $href = shift;
 
+    #TODO Add in a lookup here that will check deps for any undeclared rules
+    
     while ( my ( $k, $v ) = each %{$href} ) {
         if ( !ref($k) ) {
             $self->local_attr->add_before_meta( 'HPC ' . $k . '=' . $v . "\n" );
