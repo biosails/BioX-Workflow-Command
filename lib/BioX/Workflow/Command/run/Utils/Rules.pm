@@ -7,6 +7,8 @@ use Data::Walk;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 
+with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
+
 =head1 Name
 
 BioX::Workflow::Command::run::Utils::Rules
@@ -47,6 +49,12 @@ has 'global_keys' => (
     },
 );
 
+has [ 'select_effect', 'omit_effect' ] => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+);
+
 #This should be in its own role
 sub iterate_rules {
     my $self = shift;
@@ -65,10 +73,15 @@ sub iterate_rules {
 
     }
 
+    $self->post_process_rules;
+
     $self->fh->close();
 }
 
 =head3 filter_rule_keys
+
+First option is to use --use_timestamps
+The user can also override the timestamps with --select_* --omit_*
 
 Use the --select_rules and --omit_rules options to choose rules.
 
@@ -79,10 +92,18 @@ By default all rules are selected
 sub filter_rule_keys {
     my $self = shift;
 
-    $self->select_rule_keys( dclone( $self->rule_names ) );
+    if ( !$self->use_timestamps ) {
+        $self->select_rule_keys( dclone( $self->rule_names ) );
+    }
     $self->set_rule_keys('select');
     $self->set_rule_keys('omit');
 
+    $self->app_log->info( 'Selected rules:' . "\t"
+          . join( ', ', @{ $self->select_rule_keys } )
+          . "\n" )
+      unless $self->use_timestamps;
+    $self->app_log->info( 'Using timestamps ... ' . 'Rules to process TBA' )
+      if $self->use_timestamps;
 }
 
 =head3 set_rule_names
@@ -97,7 +118,7 @@ sub set_rule_names {
 
     my @rule_names = map { my ($key) = keys %{$_}; $key } @{$rules};
     $self->rule_names( \@rule_names );
-    $self->app_log->info( 'Found rules ' . join( ', ', @rule_names ) ."\n");
+    $self->app_log->info( 'Found rules:' . "\t" . join( ', ', @rule_names ) );
 }
 
 =head3 set_rule_keys
@@ -114,6 +135,8 @@ sub set_rule_keys {
     my $rule_exists      = 1;
     my @rule_name_exists = ();
 
+    my $effect = $cond . '_effect';
+
     my ( $has_rules, $has_bf, $has_af, $has_btw, $has_match ) =
       map { 'has_' . $cond . '_' . $_ }
       ( 'rules', 'before', 'after', 'between', 'match' );
@@ -126,6 +149,7 @@ sub set_rule_keys {
     my ($rule_keys) = ( $cond . '_rule_keys' );
 
     if ( $self->$has_rules ) {
+        $self->$effect(1);
         foreach my $r ( $self->$all_rules ) {
             if ( $self->first_index_rule_names( sub { $_ eq $r } ) != -1 ) {
                 push( @rules, $r );
@@ -139,6 +163,7 @@ sub set_rule_keys {
         }
     }
     elsif ( $self->$has_bf ) {
+        $self->$effect(1);
         my $index = $self->first_index_rule_names( sub { $_ eq $self->$bf } );
         if ( $index == -1 ) {
             $self->app_log->warn( "You "
@@ -154,6 +179,7 @@ sub set_rule_keys {
         }
     }
     elsif ( $self->$has_af ) {
+        $self->$effect(1);
         my $index = $self->first_index_rule_names( sub { $_ eq $self->$af } );
         if ( $index == -1 ) {
             $self->app_log->warn( "You "
@@ -169,6 +195,7 @@ sub set_rule_keys {
         }
     }
     elsif ( $self->$has_btw ) {
+        $self->$effect(1);
         foreach my $rule ( $self->$btw ) {
             my (@array) = split( '-', $rule );
 
@@ -193,6 +220,7 @@ sub set_rule_keys {
         }
     }
     elsif ( $self->$has_match ) {
+        $self->$effect(1);
         foreach my $match_rule ( $self->$all_matches ) {
             my @t_rules = $self->grep_rule_names( sub { /$match_rule/ } );
             map { push( @rules, $_ ) } @t_rules;
@@ -200,12 +228,37 @@ sub set_rule_keys {
     }
 
     $self->$rule_keys( \@rules ) if @rules;
-    return ( $rule_exists, @rule_name_exists );
+
+    # return ( $rule_exists, @rule_name_exists );
+}
+
+=head3 check_select
+
+See if the the current rule_name exists in either select_* or omit_*
+
+=cut
+
+sub check_select {
+    my $self = shift;
+    my $cond = shift || 'select';
+
+    my $findex = 'first_index_' . $cond . '_rule_keys';
+    my $index = $self->$findex( sub { $_ eq $self->rule_name } );
+
+    return 0 if $index == -1;
+    return 1;
 }
 
 =head3 process_rule
 
 This function is just a placeholder for the other functions we need to process a rule
+
+1. Do a sanity check of the rule - it could be yaml/json friendly but not biox friendly
+2. Clone the local attr
+3. Check for carrying indir/outdir INPUT/OUTPUT
+4. Apply the local attr - Add all the local: keys to our attr
+5. Get the keys of the rule
+6. Finally, process the template, or the process: key
 
 =cut
 
@@ -214,7 +267,6 @@ sub process_rule {
 
     $self->sanity_check_rule;
 
-    ##Initialize the local_attr
     $self->local_attr( dclone( $self->global_attr ) );
 
     $self->carry_directives;
@@ -238,7 +290,8 @@ sub sanity_check_rule {
 
     my @keys = keys %{ $self->local_rule };
 
-    $self->app_log->info('Beginning sanity check for rule...');
+    $self->app_log->info("");
+    $self->app_log->info("Beginning sanity check");
     if ( $#keys != 0 ) {
         $self->app_log->fatal('You should only have one rule name!');
         $self->sanity_check_fail;
@@ -269,7 +322,7 @@ sub sanity_check_rule {
     }
 
     $self->app_log->info(
-        'Rule : ' . $self->rule_name . ' passes sanity check' );
+        'Rule: ' . $self->rule_name . ' passes sanity check' );
 }
 
 sub sanity_check_fail {
@@ -343,16 +396,39 @@ Do the actual processing of the rule->process
 sub template_process {
     my $self = shift;
 
-    my $print_rule = $self->print_rule;
+    my @text = ();
 
-    $self->write_rule_meta('before_meta') if $print_rule;
+    #TODO we should not just spit this out as it compare_mtimes
+    #Instead save it as an object
+    #And process the object at the end to account for --auto_deps
+
+    $self->local_attr->{_modified} = 0;
+    $self->process_obj->{ $self->rule_name } = {};
 
     foreach my $sample ( $self->all_samples ) {
 
+        $self->app_log->info(
+            'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
         $self->local_attr->sample($sample);
-        my $text = $self->eval_process($print_rule);
-        $self->fh->say($text) if $print_rule;
+        $self->sample($sample);
+        my $text = $self->eval_process();
+        my $log  = $self->write_file_log();
+        $text .= $log;
+        push( @text, $text ) if $self->print_within_rule;
 
+    }
+    $self->process_obj->{ $self->rule_name }->{text} = \@text;
+
+    $self->process_obj->{ $self->rule_name }->{meta} =
+      $self->write_rule_meta('before_meta');
+
+    return unless $self->use_timestamps;
+    if ( $self->local_attr->{_modified} ) {
+        $self->app_log->info(
+            'One or more files were modified or are not logged for this rule');
+    }
+    else {
+        $self->app_log->info('Zero files were modified for this rule');
     }
 }
 
@@ -410,10 +486,31 @@ sub eval_process {
     my $self = shift;
 
     my $attr = $self->walk_attr;
+    $attr->sample( $self->sample ) if $self->has_sample;
 
     my $process = $self->local_rule->{ $self->rule_name }->{process};
     my $text    = $attr->interpol_directive($process);
+    $text = clean_text($text);
 
+    $self->walk_FILES($attr);
+    $self->clear_files;
+
+    return $text;
+}
+
+sub clean_text {
+    my $text     = shift;
+    my @text     = split( "\n", $text );
+    my @new_text = ();
+
+    foreach my $t (@text) {
+        $t =~ s/^\s+|\s+$//g;
+        if ( $t !~ /^\s*$/ ) {
+            push( @new_text, $t );
+        }
+    }
+
+    $text = join( "\n", @new_text );
     return $text;
 }
 
@@ -421,25 +518,37 @@ sub eval_process {
 
 Decide if we print the rule
 
+There are 3 main decision trees
+
+1. User specifies --select_*
+2. User specified --omit_*
+3. User specified --use_timestamps
+
+select_* and omit_* take precedence over use_timestamps
+
 =cut
 
 sub print_rule {
     my $self       = shift;
     my $print_rule = 1;
 
-    my $select_index =
-      $self->first_index_select_rule_keys( sub { $_ eq $self->rule_name } );
+    my $select_index = $self->check_select('select');
+    my $omit_index   = $self->check_select('omit');
 
-    if ( $select_index == -1 ) {
+    if ( $self->use_timestamps && !$self->select_effect && !$self->omit_effect )
+    {
+        $self->app_log->info(
+'Use timestamps in effect. Files have been modified or not logged by biox-workflow.'
+        );
+    }
+
+    if ( !$select_index ) {
         $self->app_log->info(
             'Select rules in place. Skipping rule ' . $self->rule_name );
         $print_rule = 0;
     }
 
-    my $omit_index =
-      $self->first_index_omit_rule_keys( sub { $_ eq $self->rule_name } );
-
-    if ( $omit_index != -1 ) {
+    if ($omit_index) {
         $self->app_log->info(
             'Omit rules in place. Skipping rule ' . $self->rule_name );
         $print_rule = 0;
@@ -449,6 +558,23 @@ sub print_rule {
       if $print_rule;
 
     return $print_rule;
+}
+
+sub print_within_rule {
+    my $self = shift;
+
+    my $select_index = $self->check_select('select');
+
+    if ( $self->use_timestamps ) {
+
+        my $print_rule = 0;
+        $print_rule = 1 if $self->local_attr->{_modified};
+        if ( !$select_index && $print_rule ) {
+            $self->add_select_rule_key( $self->rule_name );
+        }
+        return $print_rule;
+    }
+    return 1;
 }
 
 =head3 check_indir_outdir

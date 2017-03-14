@@ -22,9 +22,7 @@ class_type 'Path';
 class_type 'Paths';
 
 use Memoize;
-
 memoize('my_broken');
-memoize('interpol_directive');
 
 use namespace::autoclean;
 
