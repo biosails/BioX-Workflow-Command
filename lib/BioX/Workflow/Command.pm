@@ -25,12 +25,15 @@ option 'cache_dir' => (
       . '[Default: '.getcwd().'/biox-cache. ]'
 );
 
-sub BUILD { }
+sub BUILD {
+  my $self = shift;
+}
 
-after 'BUILD' => sub {
+before 'BUILD' => sub {
     my $self = shift;
 
     make_path( $self->cache_dir );
+    make_path(File::Spec->catdir($self->cache_dir, 'logs'));
 };
 
 no Moose;

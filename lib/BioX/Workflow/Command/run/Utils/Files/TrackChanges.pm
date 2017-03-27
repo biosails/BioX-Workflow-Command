@@ -7,7 +7,7 @@ use File::stat;
 use Time::localtime;
 use File::Basename;
 use DateTime::Format::Strptime;
-use Memoize;
+# use Memoize;
 
 with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
 
@@ -68,10 +68,10 @@ sub walk_FILES {
     $self->seen_modify->{local} = {};
 
     my $mod_input = $self->pre_FILES( $attr, 'INPUT' );
-
     $self->add_graph('INPUT');
     $self->clear_files;
 
+    $self->app_log->info('Between checks...');
     my $mod_output = $self->pre_FILES( $attr, 'OUTPUT' );
     $self->add_graph('OUTPUT');
     $self->clear_files;
@@ -85,13 +85,14 @@ sub pre_FILES {
     my $attr = shift;
     my $cond = shift;
 
-    # $self->app_log->info( 'Beginning modification checks for ' . $cond );
+    $self->app_log->info( 'Beginning modification checks for ' . $cond );
+    # REF check?
     walk {
         wanted => sub { $self->walk_INPUT(@_) }
       },
       $attr->$cond;
 
- # Once we get to the input we want to see if we are processing a new file or no
+    # Once we get to the input we want to see if we are processing a new file or no
     my $modify = $self->iterate_FILES;
 
     return $modify;
@@ -196,7 +197,7 @@ sub walk_INPUT {
     }
 }
 
-memoize('compare_mtimes');
+# memoize('compare_mtimes');
 
 sub compare_mtimes {
     my $pmtime = shift;

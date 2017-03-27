@@ -8,6 +8,7 @@ use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 
 with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
+use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 
 =head1 Name
 
@@ -19,6 +20,147 @@ Role for Rules
 
 =cut
 
+=head2 Command Line Options
+
+=cut
+
+option 'select_rules' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Select rules to process',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_select_rules  => 'elements',
+        has_select_rules  => 'count',
+        join_select_rules => 'join',
+    },
+    cmd_aliases => ['sr'],
+);
+
+option 'select_after' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_select_after',
+    clearer       => 'clear_select_after',
+    documentation => 'Select rules after and including a particular rule.',
+    cmd_aliases   => ['sa'],
+);
+
+option 'select_before' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_select_before',
+    clearer       => 'clear_select_before',
+    documentation => 'Select rules before and including a particular rule.',
+    cmd_aliases   => ['sb'],
+);
+
+option 'select_between' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    isa           => ArrayRefOfStrs,
+    documentation => 'select rules to process',
+    cmd_split     => qr/,/,
+    required      => 0,
+    default       => sub { [] },
+    documentation => 'Select sets of rules. Ex: rule1-rule2,rule4-rule5',
+    cmd_aliases   => ['sbtwn'],
+    handles       => {
+        all_select_between  => 'elements',
+        has_select_between  => 'count',
+        join_select_between => 'join',
+    },
+);
+
+option 'omit_rules' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Omit rules to process',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_omit_rules  => 'elements',
+        has_omit_rules  => 'count',
+        join_omit_rules => 'join',
+    },
+    cmd_aliases => ['or'],
+);
+
+option 'omit_after' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_omit_after',
+    clearer       => 'clear_omit_after',
+    documentation => 'Omit rules after and including a particular rule.',
+    cmd_aliases   => ['oa'],
+);
+
+option 'omit_before' => (
+    is            => 'rw',
+    isa           => 'Str',
+    required      => 0,
+    predicate     => 'has_omit_before',
+    clearer       => 'clear_omit_before',
+    documentation => 'Omit rules before and including a particular rule.',
+    cmd_aliases   => ['ob'],
+);
+
+option 'omit_between' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    isa           => ArrayRefOfStrs,
+    documentation => 'omit rules to process',
+    cmd_split     => qr/,/,
+    required      => 0,
+    default       => sub { [] },
+    documentation => 'Omit sets of rules. Ex: rule1-rule2,rule4-rule5',
+    cmd_aliases   => ['obtwn'],
+    handles       => {
+        all_omit_between  => 'elements',
+        has_omit_between  => 'count',
+        join_omit_between => 'join',
+    },
+);
+
+option 'select_match' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Match rules to select',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_select_match  => 'elements',
+        has_select_match  => 'count',
+        join_select_match => 'join',
+    },
+    cmd_aliases => ['sm'],
+);
+
+option 'omit_match' => (
+    traits        => ['Array'],
+    is            => 'rw',
+    required      => 0,
+    isa           => ArrayRefOfStrs,
+    documentation => 'Match rules to omit',
+    default       => sub { [] },
+    cmd_split     => qr/,/,
+    handles       => {
+        all_omit_match  => 'elements',
+        has_omit_match  => 'count',
+        join_omit_match => 'join',
+    },
+    cmd_aliases => ['om'],
+);
 # TODO Change this to rules?
 
 has 'rule_keys' => (
@@ -407,8 +549,13 @@ sub template_process {
 
     foreach my $sample ( $self->all_samples ) {
 
+        # This is very weird
+        # Once I get here the app_log resets
+        $DB::single=2;
+        
         $self->app_log->info(
             'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
+
         $self->local_attr->sample($sample);
         $self->sample($sample);
         my $text = $self->eval_process();
@@ -417,6 +564,7 @@ sub template_process {
         push( @text, $text ) if $self->print_within_rule;
 
     }
+
     $self->process_obj->{ $self->rule_name }->{text} = \@text;
 
     $self->process_obj->{ $self->rule_name }->{meta} =
