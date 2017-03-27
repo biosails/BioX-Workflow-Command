@@ -334,7 +334,7 @@ global:
     - outdir: data/processed
     - file_rule: (sample.*)$
     - by_sample_outdir: 1
-    - sample_bydir: 1
+    - find_sample_bydir: 1
     - copy1:
         local:
             - indir: '{\$self->my_dir}'

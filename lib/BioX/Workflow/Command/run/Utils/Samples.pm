@@ -167,7 +167,7 @@ sub get_samples {
 
     $text = $self->global_attr->sample_rule;
 
-    if ( $attr->sample_bydir ) {
+    if ( $attr->find_sample_bydir ) {
         @whole = find(
             directory => name => qr/$text/,
             maxdepth  => 1,

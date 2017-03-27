@@ -79,7 +79,9 @@ has 'INPUT' => (
     documentation => q(See OUTPUT)
 );
 
-=head2 sample_bydir
+=head2 find_sample_bydir
+
+#Previous find_by_dir
 
 Use this option when you sample names are by directory
 The default is to find samples by filename
@@ -93,26 +95,57 @@ The default is to find samples by filename
 
 =cut
 
-has 'sample_bydir' => (
+has 'find_sample_bydir' => (
     is            => 'rw',
     isa           => 'Bool',
     default       => 0,
     documentation => q{Use this option when you sample names are directories},
-    predicate     => 'has_sample_bydir',
-    clearer       => 'clear_sample_bydir',
+    predicate     => 'has_find_sample_bydir',
+);
+
+#Same thing - here for backwards compatibility
+
+has 'find_by_dir' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 0,
+    documentation => q{Use this option when you sample names are directories},
+    predicate     => 'has_find_by_dir',
+    trigger => sub {
+      my $self = shift;
+      $self->find_sample_bydir($self->find_by_dir);
+    }
 );
 
 =head3 by_sample_outdir
 
+No change - previously by sample outdir
+
+Preface outdir with sample
+
+Instead of
+
+  outdir/
+    rule1
+    rule2
+
+  outdir/
+    Sample_01/
+      rule1
+      rule2
+
 =cut
 
 has 'by_sample_outdir' => (
+    traits        => ['Bool'],
     is            => 'rw',
     isa           => 'Bool',
     default       => 0,
     documentation => q{Use this option when you sample names are directories},
     predicate     => 'has_by_sample_outdir',
-    clearer       => 'clear_by_sample_outdir',
+    handles       => {
+        clear_by_sample_outdir => 'unset',
+    },
 );
 
 =head3 coerce_abs_dir
@@ -198,33 +231,33 @@ has 'errors' => (
 );
 
 has 'before_meta' => (
-    traits  => ['String'],
-    is      => 'rw',
-    isa     => 'Str',
-    default => q{},
+    traits    => ['String'],
+    is        => 'rw',
+    isa       => 'Str',
+    default   => q{},
     predicate => 'has_before_meta',
-    required => 0,
-    handles => {
-      add_before_meta     => 'append',
-      replace_before_meta => 'replace',
+    required  => 0,
+    handles   => {
+        add_before_meta     => 'append',
+        replace_before_meta => 'replace',
     },
 );
 
 has 'is_select' => (
-    traits => ['Bool'],
+    traits  => ['Bool'],
     isa     => 'Bool',
     is      => 'rw',
     default => 1,
     handles => {
-      deselect => 'unset',
-      select => 'set',
+        deselect => 'unset',
+        select   => 'set',
     },
 );
 
 has 'HPC' => (
-  is => 'rw',
-  isa => 'HashRef|ArrayRef',
-  default => sub {{}}
+    is      => 'rw',
+    isa     => 'HashRef|ArrayRef',
+    default => sub { {} }
 );
 
 =head2 stash
@@ -499,7 +532,6 @@ sub walk_directives {
 
     $self->update_directive($text);
 }
-
 
 =head3 update_directive
 

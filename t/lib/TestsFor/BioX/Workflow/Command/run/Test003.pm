@@ -23,7 +23,7 @@ sub write_test_file {
             { root_dir         => 'data/raw' },
             { indir            => '{$self->root_dir}' },
             { outdir           => 'data/processed' },
-            { sample_bydir     => 1 },
+            { find_sample_bydir     => 1 },
             { by_sample_outdir => 1 },
         ],
         rules => [
@@ -94,7 +94,7 @@ sub test_001 {
         [
             'sample_rule',  'root_dir',
             'indir',        'outdir',
-            'sample_bydir', 'by_sample_outdir'
+            'find_sample_bydir', 'by_sample_outdir'
         ]
     );
 

@@ -50,7 +50,7 @@ sub execute {
                 { indir            => 'data/raw' },
                 { outdir           => 'data/processed' },
                 { root_dir         => 'data' },
-                { sample_bydir     => 1 },
+                { find_sample_bydir     => 1 },
                 { by_sample_outdir => 1 },
             ]
     };
