@@ -5,6 +5,8 @@ use MooseX::App::Command;
 use Log::Log4perl qw(:easy);
 use DateTime;
 use Text::ASCIITable;
+use Number::Bytes::Human qw(format_bytes parse_bytes);
+use File::Details;
 
 extends qw(  BioX::Workflow::Command );
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
@@ -70,7 +72,7 @@ has 'table_log' => (
         my $self = shift;
         my $t    = Text::ASCIITable->new();
         $t->setCols(
-            [ 'Rule', 'Sample', 'I/O', 'File', 'Exists', 'Modified' ] );
+            [ 'Rule', 'Sample', 'I/O', 'File', 'Exists', 'Modified', 'Size' ] );
         return $t;
     }
 );
@@ -97,6 +99,11 @@ around 'pre_FILES' => sub {
     my $attr = shift;
     my $cond = shift;
 
+    my $human = Number::Bytes::Human->new(
+        bs          => 1024,
+        round_style => 'round',
+        precision   => 2
+    );
     $self->$orig( $attr, $cond );
 
     for my $pair ( $self->files_pairs ) {
@@ -118,6 +125,9 @@ around 'pre_FILES' => sub {
 
             #Has the file been modified?
             push( @trow, $self->seen_modify->{local}->{$file} );
+            my $details = File::Details->new($file);
+            my $hsize   = $human->format( $details->size );
+            push( @trow, $hsize );
         }
         else {
             push( @trow, 0 );
