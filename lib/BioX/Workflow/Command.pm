@@ -1,7 +1,7 @@
 package BioX::Workflow::Command;
 
 use v5.10;
-our $VERSION = '2.0.3';
+our $VERSION = '2.0.4';
 
 use MooseX::App qw(Color);
 use MooseX::Types::Path::Tiny qw/Path/;

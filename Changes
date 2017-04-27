@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.0.4  2017-04-27 15:12:49 +04
 	- Removed extra cpanfile to clean up deps
 
 2.0.3  2017-04-27 12:02:29 +04
