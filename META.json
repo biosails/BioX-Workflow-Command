@@ -114,7 +114,7 @@
          "web" : "https://github.com/jerowe/BioX-Workflow-Command"
       }
    },
-   "version" : "2.0.2",
+   "version" : "2.0.3",
    "x_serialization_backend" : "Cpanel::JSON::XS version 3.0225"
 }
 
