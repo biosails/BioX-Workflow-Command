@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Removed extra cpanfile to clean up deps
 
 2.0.3  2017-04-27 12:02:29 +04
         - Adding in auto_deps - automatically decide dependnecy from INPUT/OUTPUT
