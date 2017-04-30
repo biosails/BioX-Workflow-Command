@@ -251,7 +251,7 @@ sub write_file_log {
     if (@files) {
         $text = <<EOF;
 ; \\
-biox-workflow.pl file_log \\
+biox file_log \\
 EOF
     }
 
