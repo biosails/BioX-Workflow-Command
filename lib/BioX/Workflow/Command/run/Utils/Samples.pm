@@ -119,7 +119,6 @@ has 'sample' => (
     predicate => 'has_sample',
 );
 
-
 =head2 Subroutines
 
 =head3 get_samples
@@ -146,7 +145,7 @@ Could have
 
 sub get_samples {
     my $self = shift;
-    my ( @whole, @basename, $text, $attr );
+    my ( @whole, @basename, $find_sample_bydir, $text, $attr );
 
     #Stupid resample
     $self->get_global_keys;
@@ -161,11 +160,19 @@ sub get_samples {
     #But we don't keep it around, because that would be madness
     #TODO Fix this we should process these the same way we process rule names
     $attr = dclone( $self->global_attr );
+    $DB::single=2;
     if ( $attr->indir =~ m/\{\$self/ ) {
         $attr->walk_process_data( $self->global_keys );
     }
 
-    $text = $self->global_attr->sample_rule;
+    if ( $self->global_attr->can('sample_rule') ) {
+        $text = $self->global_attr->sample_rule;
+    }
+    else {
+        $text = $self->sample_rule;
+    }
+
+    $find_sample_bydir = 0;
 
     if ( $attr->find_sample_bydir ) {
         @whole = find(
@@ -207,7 +214,8 @@ sub get_samples {
 
     if ( $self->has_no_samples ) {
         $self->app_log->warn('No samples were found!');
-        $self->app_log->warn( "Indir: " . $attr->indir . "\tSearch: " . $text."\n" );
+        $self->app_log->warn(
+            "Indir: " . $attr->indir . "\tSearch: " . $text . "\n" );
     }
 
     $self->write_sample_meta;

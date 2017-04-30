@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Bug fixes for backwards compatibility
 
 2.0.5  2017-04-30 09:31:44 +04
 	- Few changes to avoid collisions with previous BioX::Workflow

@@ -549,10 +549,6 @@ sub template_process {
 
     foreach my $sample ( $self->all_samples ) {
 
-        # This is very weird
-        # Once I get here the app_log resets
-        $DB::single=2;
-        
         $self->app_log->info(
             'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
 
@@ -621,6 +617,9 @@ sub walk_attr {
 
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
+
+    $DB::single=2;
+
     $attr->walk_process_data( $self->rule_keys );
 
     if ( $attr->create_outdir ) {

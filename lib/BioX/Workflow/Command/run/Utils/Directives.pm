@@ -111,9 +111,9 @@ has 'find_by_dir' => (
     default       => 0,
     documentation => q{Use this option when you sample names are directories},
     predicate     => 'has_find_by_dir',
-    trigger => sub {
-      my $self = shift;
-      $self->find_sample_bydir($self->find_by_dir);
+    trigger       => sub {
+        my $self = shift;
+        $self->find_sample_bydir( $self->find_by_dir );
     }
 );
 
@@ -465,7 +465,10 @@ sub walk_process_data {
     foreach my $k ( @{$keys} ) {
         next if ref($k);
         my $v = $self->$k;
-        if ( $k eq 'OUTPUT' || $k eq 'INPUT' || $k =~ m/_dir$/ ) {
+        if ( $k eq 'find_by_dir' ) {
+            $self->process_directive( $k, $v, 0 );
+        }
+        elsif ( $k eq 'OUTPUT' || $k eq 'INPUT' || $k =~ m/_dir$/ ) {
             $self->process_directive( $k, $v, 1 );
         }
         elsif ( $k eq 'indir' || $k eq 'outdir' ) {
