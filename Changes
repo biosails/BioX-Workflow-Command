@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.0.5  2017-04-30 09:31:44 +04
 	- Few changes to avoid collisions with previous BioX::Workflow
 
 2.0.4  2017-04-27 15:12:49 +04
