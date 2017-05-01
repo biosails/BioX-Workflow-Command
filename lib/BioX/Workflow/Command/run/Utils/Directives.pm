@@ -260,6 +260,29 @@ has 'HPC' => (
     default => sub { {} }
 );
 
+##Add in support for chunks
+##This is useful for features where we want to do things like
+##split a file into parts
+##count by kmers, etc
+
+has 'chunks' => (
+    is      => 'rw',
+    isa     => 'HashRef',
+    default => sub { {} }
+);
+
+has 'chunk' => ( is => 'rw' );
+
+has 'use_chunks' => (
+    is      => 'rw',
+    traits  => ['Bool'],
+    isa     => 'Bool',
+    default => 0,
+    handles => {
+      'no_chunks' => 'not',
+    }
+);
+
 =head2 stash
 
 This isn't ever used in the code. Its just there incase you want to persist objects across rules
