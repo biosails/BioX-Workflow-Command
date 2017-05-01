@@ -180,11 +180,16 @@ sub apply_global_attributes {
     my $self = shift;
 
     my $global_attr = BioX::Workflow::Command::run::Utils::Directives->new();
+
     $self->global_attr($global_attr);
 
     return unless exists $self->workflow_data->{global};
 
     $self->global_attr->create_attr( $self->workflow_data->{global} );
+
+    if ( exists $self->global_attr->chunks->{start} ) {
+        $self->global_attr->use_chunks(1);
+    }
 }
 
 1;

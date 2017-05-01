@@ -161,6 +161,7 @@ option 'omit_match' => (
     },
     cmd_aliases => ['om'],
 );
+
 # TODO Change this to rules?
 
 has 'rule_keys' => (
@@ -537,8 +538,7 @@ Do the actual processing of the rule->process
 
 sub template_process {
     my $self = shift;
-
-    my @text = ();
+    my $texts = [];
 
     #TODO we should not just spit this out as it compare_mtimes
     #Instead save it as an object
@@ -547,21 +547,13 @@ sub template_process {
     $self->local_attr->{_modified} = 0;
     $self->process_obj->{ $self->rule_name } = {};
 
+    ##TODO for modify chunks
     foreach my $sample ( $self->all_samples ) {
 
-        $self->app_log->info(
-            'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
-
-        $self->local_attr->sample($sample);
-        $self->sample($sample);
-        my $text = $self->eval_process();
-        my $log  = $self->write_file_log();
-        $text .= $log;
-        push( @text, $text ) if $self->print_within_rule;
-
+      $texts = $self->check_chunks($sample, $texts);
     }
 
-    $self->process_obj->{ $self->rule_name }->{text} = \@text;
+    $self->process_obj->{ $self->rule_name }->{text} = $texts;
 
     $self->process_obj->{ $self->rule_name }->{meta} =
       $self->write_rule_meta('before_meta');
@@ -574,6 +566,46 @@ sub template_process {
     else {
         $self->app_log->info('Zero files were modified for this rule');
     }
+}
+
+sub check_chunks {
+    my $self   = shift;
+    my $sample = shift;
+    my $texts  = shift;
+
+    if ( $self->local_attr->no_chunks ) {
+        $texts = $self->in_template_process( $sample, $texts );
+        return $texts;
+    }
+
+    ##TODO ADD CHECKS
+    my $start = $self->local_attr->chunks->{start} || 0;
+    my $end   = $self->local_attr->chunks->{end};
+    my $step  = $self->local_attr->chunks->{step} || 1;
+
+    for ( my $x = $start ; $x <= $end ; $x = $x + $step ) {
+        $self->local_attr->chunk($x);
+        $texts = $self->in_template_process( $sample, $texts );
+    }
+    return $texts;
+}
+
+sub in_template_process {
+    my $self   = shift;
+    my $sample = shift;
+    my $texts  = shift;
+
+    $self->app_log->info(
+        'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
+
+    $self->local_attr->sample($sample);
+    $self->sample($sample);
+    my $text = $self->eval_process();
+    my $log  = $self->write_file_log();
+    $text .= $log;
+    push( @{$texts}, $text ) if $self->print_within_rule;
+
+    return $texts;
 }
 
 sub get_global_keys {
@@ -618,7 +650,7 @@ sub walk_attr {
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
 
-    $DB::single=2;
+    $DB::single = 2;
 
     $attr->walk_process_data( $self->rule_keys );
 
