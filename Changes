@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.0.7  2017-05-01 12:32:58 +04
 	- Added in chunking functionality
 
 2.0.6  2017-04-30 10:37:27 +04
