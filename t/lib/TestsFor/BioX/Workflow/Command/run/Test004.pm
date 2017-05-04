@@ -152,6 +152,7 @@ sub test_001 {
     my $expect_log = <<EOF;
 ; \\
 biox file_log \\
+\t--exit_code `echo \$\?`  \\
 \t--file $test_dir/data/raw/Sample_02/some_input_rule1 \\
 \t--file $test_dir/some_output_rule1\n
 EOF
