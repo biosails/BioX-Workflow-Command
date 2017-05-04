@@ -1,6 +1,10 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Cleaned up logging to create a table - no more wall of text!
+	- Fixed HPC meta to correctly overwrite global when global/local are arrayref of keys
+	- Follow symbolic links when looking for Samples
+	- Throw an error when making a directory fails
 
 2.0.7  2017-05-01 12:32:58 +04
 	- Added in chunking functionality
