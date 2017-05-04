@@ -166,12 +166,32 @@ sub write_rule_meta {
     push( @meta_text, "$self->{comment_char}" );
     my @tmp_before_meta = split( "\n", $self->local_attr->before_meta );
 
-    map { push( @meta_text, "$self->{comment_char}" . trim($_) ) }
+    map { push( @meta_text, $self->decide_comment( trim($_) ) ) }
       @tmp_before_meta;
 
     push( @meta_text, "$self->{comment_char}\n" );
 
     return \@meta_text;
+}
+
+=head3 decide_comment
+
+In order to keep backwards compatibility with beforemeta
+If the before_meta starts with a #, don't add another one
+
+=cut
+
+sub decide_comment {
+    my $self         = shift;
+    my $current      = shift;
+    my $comment_char = $self->comment_char;
+    if ( $current =~ m/^$comment_char/ ) {
+        return $current;
+    }
+    else {
+        return $self->comment_char . $current;
+    }
+
 }
 
 sub trim {
@@ -188,7 +208,7 @@ sub trim {
 sub write_hpc_meta {
     my $self = shift;
 
-    #TODO add HPC deps
+    ##TODO Fetch Global HPC
 
     $self->local_attr->add_before_meta( ' ### HPC Directives' . "\n" );
     if ( ref( $self->local_attr->HPC ) eq 'HASH' ) {
@@ -202,6 +222,8 @@ sub write_hpc_meta {
 =head3 write_hpc_hash_meta
 
 Write meta when HPC is a HashRef
+
+If its a hash we can merge it
 
 =cut
 
@@ -237,16 +259,30 @@ sub write_hpc_array_meta {
     #First we look for keys to see if we get jobname
 
     my %lookup = ();
-    foreach my $href ( @{ $self->local_attr->HPC } ) {
-        if ( ref($href) eq 'HASH' ) {
-            my @keys = keys %{$href};
-            map { $lookup{$_} = $href->{$_} } @keys;
-        }
-        else {
-            $self->warn_hpc_meta;
-            return;
-        }
-    }
+
+    %lookup = %{$self->iter_hpc_array($self->global_attr->HPC, \%lookup)};
+    %lookup = %{$self->iter_hpc_array($self->local_attr->HPC, \%lookup)};
+    ##TODO add in global hpc meta
+    # foreach my $href ( @{ $self->global_attr->HPC } ) {
+    #     if ( ref($href) eq 'HASH' ) {
+    #         my @keys = keys %{$href};
+    #         map { $lookup{$_} = $href->{$_} } @keys;
+    #     }
+    #     else {
+    #         $self->warn_hpc_meta;
+    #         return;
+    #     }
+    # }
+    # foreach my $href ( @{ $self->local_attr->HPC } ) {
+    #     if ( ref($href) eq 'HASH' ) {
+    #         my @keys = keys %{$href};
+    #         map { $lookup{$_} = $href->{$_} } @keys;
+    #     }
+    #     else {
+    #         $self->warn_hpc_meta;
+    #         return;
+    #     }
+    # }
 
     if ( !exists $lookup{jobname} ) {
         $self->local_attr->add_before_meta(
@@ -262,9 +298,30 @@ sub write_hpc_array_meta {
         delete $lookup{jobname};
     }
 
-
-
     $self->iter_hpc_hash( \%lookup );
+}
+
+=head3 iter_hpc_array
+
+=cut
+
+sub iter_hpc_array {
+    my $self   = shift;
+    my $aref   = shift;
+    my $lookup = shift;
+
+    foreach my $href ( @{ $aref } ) {
+        if ( ref($href) eq 'HASH' ) {
+            my @keys = keys %{$href};
+            map { $lookup->{$_} = $href->{$_} } @keys;
+        }
+        else {
+            $self->warn_hpc_meta;
+            return;
+        }
+    }
+
+    return $lookup;
 }
 
 =head3 iter_hpc_hash
@@ -276,7 +333,7 @@ sub iter_hpc_hash {
     my $href = shift;
 
     #TODO Add in a lookup here that will check deps for any undeclared rules
-    
+
     while ( my ( $k, $v ) = each %{$href} ) {
         if ( !ref($k) ) {
             $self->local_attr->add_before_meta( 'HPC ' . $k . '=' . $v . "\n" );

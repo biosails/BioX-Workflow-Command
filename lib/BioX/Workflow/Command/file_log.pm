@@ -37,24 +37,33 @@ option 'files' => (
     },
 );
 
+#Put a default to keep from breaking backwards compatibility
+option 'exit_code' => (
+    is       => 'rw',
+    required => 0,
+    default  => 0,
+);
 
 sub execute {
-  my $self = shift;
+    my $self = shift;
 
-  foreach my $file ($self->all_files){
+    foreach my $file ( $self->all_files ) {
 
-    if(-e $file){
-      $self->app_log->info('File '.$file.' exists');
+        if ( -e $file ) {
+            $self->app_log->info( 'File ' . $file . ' exists' );
+        }
+        else {
+            $self->app_log->info( 'File ' . $file . ' does not exist' );
+            next;
+        }
+
+        my $details = File::Details->new($file);
+        my $mtime   = ctime( stat($file)->mtime );
+        $self->track_files->{$file}->{mtime} = $mtime;
     }
-    else{
-      $self->app_log->info('File '.$file.' does not exist');
-      next;
-    }
 
-    my $details = File::Details->new($file);
-    my $mtime   = ctime( stat($file)->mtime );
-    $self->track_files->{$file}->{mtime} = $mtime;
-  }
+    #Preserve the exit code of the previous process
+    exit($self->exit_code);
 
 }
 

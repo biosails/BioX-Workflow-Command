@@ -71,7 +71,7 @@ sub walk_FILES {
     $self->add_graph('INPUT');
     $self->clear_files;
 
-    $self->app_log->info('Between checks...');
+    # $self->app_log->info('Between checks...');
     my $mod_output = $self->pre_FILES( $attr, 'OUTPUT' );
     $self->add_graph('OUTPUT');
     $self->clear_files;
@@ -85,7 +85,7 @@ sub pre_FILES {
     my $attr = shift;
     my $cond = shift;
 
-    $self->app_log->info( 'Beginning modification checks for ' . $cond );
+    # $self->app_log->info( 'Beginning modification checks for ' . $cond );
     # REF check?
     walk {
         wanted => sub { $self->walk_INPUT(@_) }
@@ -167,9 +167,9 @@ sub flag_for_process {
     my $basename = basename($file);
 
     #TO LOG OR NOT TO LOG
-    $self->app_log->info(
+    $self->app_log->warn(
         'File ' . $file . ' has been modified since your last analysis.' );
-    $self->app_log->info( $basename
+    $self->app_log->warn( $basename
           . ":\n\tLast Recorded Modification:\t"
           . $p_mtime
           . "\n\tMost Recent Modification:\t"
@@ -252,6 +252,7 @@ sub write_file_log {
         $text = <<EOF;
 ; \\
 biox file_log \\
+\t--exit_code `echo \$\?`  \\
 EOF
     }
 
@@ -261,7 +262,7 @@ EOF
 \t--file $file \\
 EOF
     }
-    $text .= "\t--file $last\n\n";
+    $text .= "\t--file $last\n\n" if $last;
 
     return $text;
 }
