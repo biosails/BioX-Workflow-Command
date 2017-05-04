@@ -99,6 +99,10 @@ around 'pre_FILES' => sub {
     my $attr = shift;
     my $cond = shift;
 
+    my $index =
+      $self->first_index_select_rule_keys( sub { $_ eq $self->rule_name } );
+    return if $index == -1;
+
     my $human = Number::Bytes::Human->new(
         bs          => 1024,
         round_style => 'round',

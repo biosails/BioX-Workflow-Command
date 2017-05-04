@@ -143,6 +143,8 @@ Could have
 
 =cut
 
+##TODO Add files
+
 sub get_samples {
     my $self = shift;
     my ( @whole, @basename, $find_sample_bydir, $text, $attr );
@@ -159,8 +161,8 @@ sub get_samples {
     #We need to evaluate the global_dirs incase the indir has a var
     #But we don't keep it around, because that would be madness
     #TODO Fix this we should process these the same way we process rule names
-    $attr = dclone( $self->global_attr );
-    $DB::single=2;
+    $attr       = dclone( $self->global_attr );
+    $DB::single = 2;
     if ( $attr->indir =~ m/\{\$self/ ) {
         $attr->walk_process_data( $self->global_keys );
     }
@@ -176,9 +178,10 @@ sub get_samples {
 
     if ( $attr->find_sample_bydir ) {
         @whole = find(
-            directory => name => qr/$text/,
+            directory => name     => qr/$text/,
             maxdepth  => 1,
-            in        => $attr->indir
+            in        => $attr->indir,
+            extras    => { follow => 1 },
         );
 
         if (@whole) {
@@ -193,8 +196,9 @@ sub get_samples {
     }
     else {
         @whole = find(
-            file     => name => qr/$text/,
+            file     => name     => qr/$text/,
             maxdepth => 1,
+            extras   => { follow => 1 },
             in       => $attr->indir
         );
 

@@ -5,6 +5,8 @@ use String::Approx 'amatch';
 use Algorithm::Dependency::Source::HoA;
 use Algorithm::Dependency::Ordered;
 use Try::Tiny;
+use Path::Tiny;
+use Text::ASCIITable;
 use Data::Dumper;
 
 # Not even close to this yet
@@ -60,12 +62,22 @@ sub post_process_rules {
           . join( ', ', @{ $self->select_rule_keys } )
           . "\n" )
       if $self->use_timestamps;
-    $self->app_log->info( 'Looking for orphan INPUTs '
-          . '(INPUTs with no corresponding OUTPUTs)' );
+    # $self->app_log->info( 'Looking for orphan INPUTs '
+    #       . '(INPUTs with no corresponding OUTPUTs)' );
 
+    my $rule_count = 0;
     foreach my $rule ( $self->all_select_rule_keys ) {
+        ##Skip the first rule
+        if ( $rule_count == 0 ) {
+            $rule_count++;
+            next;
+        }
         $self->check_input_output($rule);
     }
+
+
+    $self->app_log->warn( "Found Orphan Inputs (inputs with no corresponding outputs)\n" . $self->orphan_table )
+      if $self->orphan_inputs;
 
     $self->dedeps;
     $self->process_auto_deps;
@@ -76,12 +88,12 @@ sub post_process_rules {
 sub print_process_workflow {
     my $self = shift;
 
+    $self->app_log->info( 'Post processing rules and printing workflow...' );
     foreach my $rule ( $self->all_rule_names ) {
 
         #TODO This should be named select_rule_names
         my $index = $self->first_index_select_rule_keys( sub { $_ eq $rule } );
         next if $index == -1;
-        $self->app_log->info( 'Post processing ' . $rule );
 
         my $meta = $self->process_obj->{$rule}->{meta} || [];
         my $text = $self->process_obj->{$rule}->{text} || [];
@@ -148,15 +160,32 @@ sub process_auto_deps {
         my @deps = @{ $self->graph->{$rule} };
         if (@deps) {
             chomp($before_meta);
-            $before_meta .= "\n#HPC deps=" . join( ',', @deps )."\n\n";
+            $before_meta .= "\n#HPC deps=" . join( ',', @deps ) . "\n\n";
         }
         my @text = split( "\n", $before_meta );
         $self->process_obj->{$rule}->{meta} = \@text;
     }
 
+
 }
 
 #TODO Add in deps check
+
+has 'orphan_table' => (
+    is      => 'rw',
+    default => sub {
+        my $self = shift;
+        my $t    = Text::ASCIITable->new();
+        $t->setCols( [ 'Rule', 'INPUT', 'Possible Matches' ] );
+        return $t;
+    }
+);
+
+has 'orphan_inputs' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
+);
 
 sub check_input_output {
     my $self = shift;
@@ -172,17 +201,24 @@ sub check_input_output {
 
     foreach my $srule ( $self->all_select_rule_keys ) {
         next if $srule eq $rule;
+        my @trow = ();
 
         my @inter = grep( $self->rule_deps->{$srule}->{OUTPUT}->{$_}, @INPUTS );
         if ( !@inter ) {
+            $self->orphan_inputs(1);
             my @OUTPUTS = keys %{ $self->rule_deps->{$srule}->{OUTPUT} };
             map {
                 my @matches = amatch( $_, @OUTPUTS );
-                $self->app_log->warn( "Orphan INPUT:"
-                      . "\tRule: $rule  File: $_\n"
-                      . "\tPossible matches include "
-                      . join( ", ", @matches ) )
-                  if @matches
+                my @rels = map { path($_)->relative->stringify } @matches;
+                my $f = path($_)->relative->stringify;
+
+                push( @trow, $rule );
+                push( @trow, $f );
+                push( @trow, join( "\n", @rels ) );
+                $self->orphan_table->addRow( \@trow );
+                $self->orphan_table->addRowLine();
+                @trow = ();
+
             } @INPUTS;
         }
         else {

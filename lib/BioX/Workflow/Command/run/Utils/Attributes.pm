@@ -174,6 +174,7 @@ sub apply_local_attr {
 
     $self->local_attr->create_attr(
         $self->local_rule->{ $self->rule_name }->{local} );
+
 }
 
 sub apply_global_attributes {

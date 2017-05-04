@@ -433,19 +433,22 @@ sub sanity_check_rule {
 
     my @keys = keys %{ $self->local_rule };
 
-    $self->app_log->info("");
-    $self->app_log->info("Beginning sanity check");
+    # $self->app_log->info("");
+    # $self->app_log->info("Beginning sanity check");
     if ( $#keys != 0 ) {
-        $self->app_log->fatal('You should only have one rule name!');
+        $self->app_log->fatal(
+            'Sanity check fail: There should be one rule name!');
         $self->sanity_check_fail;
         return;
     }
 
     $self->rule_name( $keys[0] );
-    $self->app_log->info( 'Sanity check on rule ' . $self->rule_name );
+
+    # $self->app_log->info( 'Sanity check on rule ' . $self->rule_name );
 
     if ( !exists $self->local_rule->{ $self->rule_name }->{process} ) {
-        $self->app_log->fatal('Your rule does not have a process!');
+        $self->app_log->fatal(
+            'Sanity check fail: Rule does not have a process!');
         $self->sanity_check_fail;
         return;
     }
@@ -458,7 +461,8 @@ sub sanity_check_rule {
 
         if ( !ref($ref) eq 'ARRAY' ) {
             $self->app_log->fatal(
-                'Your variable declarations should begin with an array!');
+'Sanity check fail: Your variable declarations should begin with an array!'
+            );
             $self->sanity_check_fail;
             return;
         }
@@ -537,7 +541,7 @@ Do the actual processing of the rule->process
 =cut
 
 sub template_process {
-    my $self = shift;
+    my $self  = shift;
     my $texts = [];
 
     #TODO we should not just spit this out as it compare_mtimes
@@ -550,7 +554,7 @@ sub template_process {
     ##TODO for modify chunks
     foreach my $sample ( $self->all_samples ) {
 
-      $texts = $self->check_chunks($sample, $texts);
+        $texts = $self->check_chunks( $sample, $texts );
     }
 
     $self->process_obj->{ $self->rule_name }->{text} = $texts;
@@ -594,9 +598,6 @@ sub in_template_process {
     my $self   = shift;
     my $sample = shift;
     my $texts  = shift;
-
-    $self->app_log->info(
-        'Processing Rule: ' . $self->rule_name . ' Sample: ' . $sample );
 
     $self->local_attr->sample($sample);
     $self->sample($sample);
