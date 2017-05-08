@@ -265,6 +265,8 @@ sub set_rule_names {
     $self->app_log->info( 'Found rules:' . "\t" . join( ', ', @rule_names ) );
 }
 
+#TODO This is confusing change names
+
 =head3 set_rule_keys
 
 If we have any select_* or select_match, get those rules before we start processing
@@ -554,8 +556,7 @@ sub template_process {
 
     ##TODO for modify chunks
     foreach my $sample ( $self->all_samples ) {
-
-        $texts = $self->check_chunks( $sample, $texts );
+        $texts = $self->check_iterables( $sample, $texts );
     }
 
     $self->process_obj->{ $self->rule_name }->{text} = $texts;
@@ -573,23 +574,45 @@ sub template_process {
     }
 }
 
-sub check_chunks {
+sub check_iterables {
     my $self   = shift;
     my $sample = shift;
     my $texts  = shift;
 
-    if ( $self->local_attr->no_chunks ) {
+    #First check the global for any lists
+    my $iter     = '';
+    my $use_iter = 0;
+    my @use      = ();
+    map {
+        if ( $_ =~ m/^use_/ ) { push( @use, $_ ) }
+    } @{ $self->rule_keys };
+    map {
+        if ( $_ =~ m/^use_/ ) { push( @use, $_ ) }
+    } @{ $self->local_rule_keys };
+
+
+    my $use = pop(@use);
+
+    if(! $use){
         $texts = $self->in_template_process( $sample, $texts );
         return $texts;
     }
 
-    ##TODO ADD CHECKS
-    my $start = $self->local_attr->chunks->{start} || 0;
-    my $end   = $self->local_attr->chunks->{end};
-    my $step  = $self->local_attr->chunks->{step} || 1;
+    my $base = $use;
+    $base =~ s/use_//;
 
-    for ( my $x = $start ; $x <= $end ; $x = $x + $step ) {
-        $self->local_attr->chunk($x);
+    my $no = 'no_'.$base;
+    my $elem = $base;
+    $elem =~ s/s$//;
+    my $all  = 'all_'.$elem.'_lists';
+
+    if ( $self->local_attr->$no ) {
+        $texts = $self->in_template_process( $sample, $texts );
+        return $texts;
+    }
+
+    foreach my $chunk ( $self->local_attr->$all) {
+        $self->local_attr->$elem($chunk);
         $texts = $self->in_template_process( $sample, $texts );
     }
     return $texts;
