@@ -6,6 +6,7 @@ use Data::Merger qw(merger);
 use Data::Walk;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
+use Try::Tiny;
 
 with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
@@ -655,8 +656,16 @@ sub walk_attr {
 
     $attr->walk_process_data( $self->rule_keys );
 
-    if ( $attr->create_outdir ) {
-        make_path( $attr->outdir );
+    if ( $attr->create_outdir && !$attr->outdir->is_dir ) {
+
+        try {
+            $attr->outdir->mkpath;
+        }
+        catch {
+            $self->app_log->fatal( "We were not able to make the directory.\n\t"
+                  . $attr->outdir
+                  . "\n\tError: $!" );
+        };
     }
 
     return $attr;
