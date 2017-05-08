@@ -264,6 +264,13 @@ has 'HPC' => (
 ##This is useful for features where we want to do things like
 ##split a file into parts
 ##count by kmers, etc
+=head2 Iterables
+
+Lists to iterate by
+
+Chunks and chroms are included by default
+
+=cut
 
 has 'chunks' => (
     is      => 'rw',
@@ -282,6 +289,15 @@ has 'use_chunks' => (
       'no_chunks' => 'not',
     }
 );
+
+
+has 'chroms' => (
+is => 'rw',
+isa => 'ArrayRef',
+default => sub {
+  return [1 .. 22, 'X', 'Y', 'MT'];
+},
+)
 
 =head2 stash
 
