@@ -23,17 +23,25 @@ sub write_test_file {
     my $fh;
     my $href = {
         global => [
-            { sample_rule      => "Sample_.*" },
-            { root_dir         => 'data/raw' },
-            { indir            => '{$self->root_dir}' },
-            { outdir           => 'data/processed' },
-            { find_sample_bydir     => 1 },
-            { by_sample_outdir => 1 },
-            { chunks => {
-              start => 1,
-              end => 10,
-              step => 1,
-            }},
+            { sample_rule       => "Sample_.*" },
+            { root_dir          => 'data/raw' },
+            { indir             => '{$self->root_dir}' },
+            { outdir            => 'data/processed' },
+            { find_sample_bydir => 1 },
+            { by_sample_outdir  => 1 },
+            {
+                chunks => {
+                    start => 1,
+                    end   => 10,
+                    step  => 1,
+                }
+            },
+            {
+                use_chunks => 1,
+            },
+            {
+                some_list => [ 1, 2, 3 ],
+            },
         ],
         rules => [
             {
@@ -42,9 +50,10 @@ sub write_test_file {
                         { root_dir => 'data/raw' },
                         {
                             INPUT =>
-                              '{$self->root_dir}/{$sample}/some_input_rule1.{$self->chunk}'
+'{$self->root_dir}/{$sample}/some_input_rule1.{$self->chunk}'
                         },
                         { OUTPUT => ['some_output_rule1'] },
+                        { use_chunks => 1 },
                     ],
                     process =>
 'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
@@ -58,8 +67,8 @@ sub write_test_file {
                             INPUT =>
                               '{$self->root_dir}/{$sample}/some_input_rule1'
                         },
-                        {use_chunks => 0},
-                        { OUTPUT => ['some_output_rule1'] },
+                        { use_chunks => 1 },
+                        { OUTPUT     => ['some_output_rule1'] },
                     ],
                     process =>
 'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
@@ -97,6 +106,7 @@ sub test_001 {
     my ( $test, $test_dir, $rules ) = construct_tests;
 
     $test->samples( [ 'Sample_01', 'Sample_02' ] );
+
     # $test->stdout(1);
     $test->set_rule_names;
     $test->filter_rule_keys;
@@ -104,17 +114,40 @@ sub test_001 {
     foreach my $rule ( @{$rules} ) {
         _init_rule( $test, $rule );
     }
+
     # $test->auto_deps(1);
     $test->post_process_rules;
 
     # diag(Dumper($test->select_rule_keys));
     # diag(Dumper($test->process_obj->{t3_rule1}->{text}));
     my $text = $test->process_obj->{t3_rule1}->{text};
-    is(scalar(@{$text}), 20);
+    is( scalar( @{$text} ), 20 );
     $text = $test->process_obj->{t3_rule2}->{text};
-    is(scalar(@{$text}), 2);
+    # is( scalar( @{$text} ), 2 );
 
     ok(1);
+}
+
+#TODO This needs to be in a separate test
+
+sub test_002 {
+    my ( $test, $test_dir, $rules ) = construct_tests;
+
+    $test->samples( [ 'Sample_01', 'Sample_02' ] );
+
+    # $test->stdout(1);
+    $test->set_rule_names;
+    $test->filter_rule_keys;
+
+    foreach my $rule ( @{$rules} ) {
+        _init_rule( $test, $rule );
+    }
+
+    diag Dumper( $test->global_attr->some_list );
+    diag Dumper( $test->global_attr->use_somes );
+    diag Dumper( $test->global_attr->some );
+    ok(1);
+
 }
 
 sub create_times {

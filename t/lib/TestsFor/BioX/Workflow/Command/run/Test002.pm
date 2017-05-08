@@ -166,7 +166,7 @@ sub test_003 : Tags(get_samples) {
 
     ok( $test->global_attr->indir->can('absolute'),
         'Indir has method absolute' );
-    ok( $test->global_attr->can('all_some_array'),  'Array has all method' );
+    ok( $test->global_attr->can('all_some_arrays'),  'Array has all method' );
     ok( $test->global_attr->can('some_hash_pairs'), 'Hash has pairs method' );
 }
 
