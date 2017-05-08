@@ -65,19 +65,19 @@ sub post_process_rules {
     # $self->app_log->info( 'Looking for orphan INPUTs '
     #       . '(INPUTs with no corresponding OUTPUTs)' );
 
-    my $rule_count = 0;
-    foreach my $rule ( $self->all_select_rule_keys ) {
-        ##Skip the first rule
-        if ( $rule_count == 0 ) {
-            $rule_count++;
-            next;
-        }
-        $self->check_input_output($rule);
-    }
-
-
-    $self->app_log->warn( "Found Orphan Inputs (inputs with no corresponding outputs)\n" . $self->orphan_table )
-      if $self->orphan_inputs;
+    # my $rule_count = 0;
+    # foreach my $rule ( $self->all_select_rule_keys ) {
+    #     ##Skip the first rule
+    #     if ( $rule_count == 0 ) {
+    #         $rule_count++;
+    #         next;
+    #     }
+    #     $self->check_input_output($rule);
+    # }
+    #
+    #
+    # $self->app_log->warn( "Found Orphan Inputs (inputs with no corresponding outputs)\n" . $self->orphan_table )
+    #   if $self->orphan_inputs;
 
     $self->dedeps;
     $self->process_auto_deps;
