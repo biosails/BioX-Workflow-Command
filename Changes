@@ -2,6 +2,14 @@ Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
 
+2.0.10  2017-05-08 13:20:42 +04
+	- Removing orphan input check
+
+2.0.9  2017-05-08 13:02:46 +04
+	- Added in iterables
+	- Can now defined any_list
+	- And uterate through it using use_anys (pay attention to the s)
+
 2.0.8  2017-05-04 14:30:02 +04
 	- Cleaned up logging to create a table - no more wall of text!
 	- Fixed HPC meta to correctly overwrite global when global/local are arrayref of keys
