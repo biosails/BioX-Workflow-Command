@@ -199,6 +199,18 @@ has [ 'select_effect', 'omit_effect' ] => (
     default => 0,
 );
 
+has 'dummy_sample' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => '__DUMMYSAMPLE123456789__'
+);
+
+has 'dummy_iterable' => (
+    is      => 'rw',
+    isa     => 'Str',
+    default => '__DUMMYITER123456789__'
+);
+
 #This should be in its own role
 sub iterate_rules {
     my $self = shift;
@@ -236,18 +248,20 @@ By default all rules are selected
 sub filter_rule_keys {
     my $self = shift;
 
-    if ( !$self->use_timestamps ) {
-        $self->select_rule_keys( dclone( $self->rule_names ) );
-    }
+    # if ( !$self->use_timestamps ) {
+    $self->select_rule_keys( dclone( $self->rule_names ) );
+
+    # }
     $self->set_rule_keys('select');
     $self->set_rule_keys('omit');
 
     $self->app_log->info( 'Selected rules:' . "\t"
           . join( ', ', @{ $self->select_rule_keys } )
-          . "\n" )
-      unless $self->use_timestamps;
-    $self->app_log->info( 'Using timestamps ... ' . 'Rules to process TBA' )
-      if $self->use_timestamps;
+          . "\n" );
+
+    # unless $self->use_timestamps;
+    # $self->app_log->info( 'Using timestamps ... ' . 'Rules to process TBA' )
+    #   if $self->use_timestamps;
 }
 
 =head3 set_rule_names
@@ -551,12 +565,17 @@ sub template_process {
     #Instead save it as an object
     #And process the object at the end to account for --auto_deps
 
-    $self->local_attr->{_modified} = 0;
+    # $self->local_attr->{_modified} = 0;
     $self->process_obj->{ $self->rule_name } = {};
 
-    ##TODO for modify chunks
+    my $dummy_sample = $self->dummy_sample;
+    my $dummy_texts = $self->check_iterables( $dummy_sample, [] );
     foreach my $sample ( $self->all_samples ) {
-        $texts = $self->check_iterables( $sample, $texts );
+        foreach my $text ( @{$dummy_texts} ) {
+            my $new_text = $text;
+            $new_text =~ s/$dummy_sample/$sample/g;
+            push( @$texts, $new_text );
+        }
     }
 
     $self->process_obj->{ $self->rule_name }->{text} = $texts;
@@ -564,22 +583,19 @@ sub template_process {
     $self->process_obj->{ $self->rule_name }->{meta} =
       $self->write_rule_meta('before_meta');
 
-    return unless $self->use_timestamps;
-    if ( $self->local_attr->{_modified} ) {
-        $self->app_log->info(
-            'One or more files were modified or are not logged for this rule');
-    }
-    else {
-        $self->app_log->info('Zero files were modified for this rule');
-    }
+   # return unless $self->use_timestamps;
+   # if ( $self->local_attr->{_modified} ) {
+   #     $self->app_log->info(
+   #         'One or more files were modified or are not logged for this rule');
+   # }
+   # else {
+   #     $self->app_log->info('Zero files were modified for this rule');
+   # }
 }
 
-sub check_iterables {
-    my $self   = shift;
-    my $sample = shift;
-    my $texts  = shift;
+sub use_iterables {
+    my $self = shift;
 
-    #First check the global for any lists
     my $iter     = '';
     my $use_iter = 0;
     my @use      = ();
@@ -590,31 +606,55 @@ sub check_iterables {
         if ( $_ =~ m/^use_/ ) { push( @use, $_ ) }
     } @{ $self->local_rule_keys };
 
-
     my $use = pop(@use);
 
-    if(! $use){
-        $texts = $self->in_template_process( $sample, $texts );
-        return $texts;
-    }
+    return 0 if !$use;
 
     my $base = $use;
     $base =~ s/use_//;
 
-    my $no = 'no_'.$base;
+    my $no = 'no_' . $base;
+
+    return 0 if $self->local_attr->$no;
+
     my $elem = $base;
     $elem =~ s/s$//;
-    my $all  = 'all_'.$elem.'_lists';
+    my $all = 'all_' . $elem . '_lists';
 
-    if ( $self->local_attr->$no ) {
+    return [ $all, $elem ];
+}
+
+sub check_iterables {
+    my $self   = shift;
+    my $sample = shift;
+    my $texts  = shift;
+
+    #First check the global for any lists
+    my $use_iters = $self->use_iterables;
+
+    if ( ! $use_iters ) {
         $texts = $self->in_template_process( $sample, $texts );
         return $texts;
     }
 
-    foreach my $chunk ( $self->local_attr->$all) {
-        $self->local_attr->$elem($chunk);
-        $texts = $self->in_template_process( $sample, $texts );
+    my $all = $use_iters->[0];
+    my $elem = $use_iters->[1];
+
+    ##TODO This should be a separate function
+    my $dummy_iter = $self->dummy_iterable;
+    $self->local_attr->$elem($dummy_iter);
+
+    my $dummy_texts = $self->in_template_process( $sample, [] );
+
+    foreach my $chunk ( $self->local_attr->$all ) {
+        foreach my $text ( @{$dummy_texts} ) {
+            my $new_text = $text;
+            $new_text =~ s/$dummy_iter/$chunk/g;
+            push( @$texts, $new_text );
+        }
     }
+    ##
+
     return $texts;
 }
 
@@ -747,12 +787,12 @@ sub print_rule {
     my $select_index = $self->check_select('select');
     my $omit_index   = $self->check_select('omit');
 
-    if ( $self->use_timestamps && !$self->select_effect && !$self->omit_effect )
-    {
-        $self->app_log->info(
-'Use timestamps in effect. Files have been modified or not logged by biox-workflow.'
-        );
-    }
+# if ( $self->use_timestamps && !$self->select_effect && !$self->omit_effect )
+#     {
+#         $self->app_log->info(
+# 'Use timestamps in effect. Files have been modified or not logged by biox-workflow.'
+#         );
+#     }
 
     if ( !$select_index ) {
         $self->app_log->info(
@@ -775,17 +815,18 @@ sub print_rule {
 sub print_within_rule {
     my $self = shift;
 
+    #TODO May not need this without use_timestamps
     my $select_index = $self->check_select('select');
 
-    if ( $self->use_timestamps ) {
-
-        my $print_rule = 0;
-        $print_rule = 1 if $self->local_attr->{_modified};
-        if ( !$select_index && $print_rule ) {
-            $self->add_select_rule_key( $self->rule_name );
-        }
-        return $print_rule;
-    }
+    # if ( $self->use_timestamps ) {
+    #
+    #     my $print_rule = 0;
+    #     $print_rule = 1 if $self->local_attr->{_modified};
+    #     if ( !$select_index && $print_rule ) {
+    #         $self->add_select_rule_key( $self->rule_name );
+    #     }
+    #     return $print_rule;
+    # }
     return 1;
 }
 

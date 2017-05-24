@@ -7,6 +7,7 @@ use DateTime;
 use Text::ASCIITable;
 use Number::Bytes::Human qw(format_bytes parse_bytes);
 use File::Details;
+use File::Basename;
 
 extends qw(  BioX::Workflow::Command );
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
@@ -71,10 +72,22 @@ has 'table_log' => (
     default => sub {
         my $self = shift;
         my $t    = Text::ASCIITable->new();
-        $t->setCols(
-            [ 'Rule', 'Sample', 'I/O', 'File', 'Exists', 'Modified', 'Size' ] );
+        $t->setCols( [ 'Rule', 'Sample', 'I/O', 'File', 'Exists', 'Size' ] );
         return $t;
     }
+);
+
+option 'use_full' => (
+    is            => 'rw',
+    isa           => 'Bool',
+    default       => 0,
+    documentation => 'Use the full path name instead of the basename'
+);
+
+our $human = Number::Bytes::Human->new(
+    bs          => 1024,
+    round_style => 'round',
+    precision   => 2
 );
 
 sub execute {
@@ -103,22 +116,39 @@ around 'pre_FILES' => sub {
       $self->first_index_select_rule_keys( sub { $_ eq $self->rule_name } );
     return if $index == -1;
 
-    my $human = Number::Bytes::Human->new(
-        bs          => 1024,
-        round_style => 'round',
-        precision   => 2
-    );
     $self->$orig( $attr, $cond );
 
     for my $pair ( $self->files_pairs ) {
+        $self->preprocess_row( $pair->[0], $cond );
+    }
+};
+
+sub preprocess_row {
+    my $self = shift;
+    my $file = shift;
+    my $cond = shift;
+
+    $self->iter_file_samples( $file, $cond );
+}
+
+sub gen_row {
+    my $self         = shift;
+    my $file         = shift;
+    my $cond         = shift;
+    my $sample       = shift;
+    my $sample_files = shift;
+
+    foreach my $file (@$sample_files) {
+
         my @trow = ();
 
         push( @trow, $self->rule_name );
-        push( @trow, $self->sample );
+        push( @trow, $sample );
         push( @trow, $cond );
 
-        my $file = $pair->[0];
-        my $rel  = File::Spec->abs2rel($file);
+        my $rel = '';
+        $rel = File::Spec->abs2rel($file) if $self->use_full;
+        $rel = basename($file);
 
         #Add the filename
         push( @trow, $rel );
@@ -127,8 +157,7 @@ around 'pre_FILES' => sub {
         if ( -e $file ) {
             push( @trow, 1 );
 
-            #Has the file been modified?
-            push( @trow, $self->seen_modify->{local}->{$file} );
+            #File Size
             my $details = File::Details->new($file);
             my $hsize   = $human->format( $details->size );
             push( @trow, $hsize );
@@ -140,7 +169,52 @@ around 'pre_FILES' => sub {
         $self->table_log->addRow( \@trow );
     }
 
-};
+}
+
+sub iter_file_samples {
+    my $self = shift;
+    my $file = shift;
+    my $cond = shift;
+
+    my $dummy_sample = $self->dummy_sample;
+
+    foreach my $sample ( $self->all_samples ) {
+        my @sample_files = ();
+        my $new_file     = $file;
+        $new_file =~ s/$dummy_sample/$sample/g;
+        my $chunk_files = $self->iter_file_chunks($new_file);
+
+        if ($chunk_files) {
+            map { push( @sample_files, $_ ) } @{$chunk_files};
+        }
+        else {
+            push( @sample_files, $new_file );
+        }
+        $self->gen_row( $file, $cond, $sample, \@sample_files );
+    }
+
+}
+
+sub iter_file_chunks {
+    my $self = shift;
+    my $file = shift;
+
+    my @files    = ();
+    my $use_iter = $self->use_iterables;
+
+    return 0 if !$use_iter;
+
+    my $all  = $use_iter->[0];
+    my $elem = $use_iter->[1];
+
+    my $dummy_iter = $self->dummy_iterable;
+    foreach my $chunk ( $self->local_attr->$all ) {
+        my $new_file = $file;
+        $new_file =~ s/$dummy_iter/$chunk/g;
+        push( @files, $new_file );
+    }
+    return \@files;
+}
 
 after 'template_process' => sub {
     my $self = shift;

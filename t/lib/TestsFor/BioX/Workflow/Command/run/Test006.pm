@@ -143,9 +143,9 @@ sub test_002 {
         _init_rule( $test, $rule );
     }
 
-    diag Dumper( $test->global_attr->some_list );
-    diag Dumper( $test->global_attr->use_somes );
-    diag Dumper( $test->global_attr->some );
+    # diag Dumper( $test->global_attr->some_list );
+    # diag Dumper( $test->global_attr->use_somes );
+    # diag Dumper( $test->global_attr->some );
     ok(1);
 
 }

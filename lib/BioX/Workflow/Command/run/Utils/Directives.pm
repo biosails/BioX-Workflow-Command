@@ -23,9 +23,10 @@ class_type 'Path';
 class_type 'Paths';
 
 use Memoize;
-memoize('my_broken');
 
 use namespace::autoclean;
+
+our $c = new Safe;
 
 =head2 File Options
 
@@ -580,16 +581,26 @@ sub create_ITERABLE_attr {
     $self->create_BOOL_attr( $meta, $t );
 }
 
+has 'interpol_directive_cache' => (
+    is      => 'rw',
+    isa     => 'HashRef',
+    default => sub { {} },
+);
+
 sub interpol_directive {
     my $self   = shift;
     my $source = shift;
     my $text   = '';
 
-    if ( !$source ) {
-        return '';
+    if ( exists $self->interpol_directive_cache->{$source} ) {
+        return $self->interpol_directive_cache->{$source};
     }
 
-    my $c        = new Safe;
+    if ( $source !~ m/{\$/ ) {
+        $self->interpol_directive_cache->{$source} = $source;
+        return $source;
+    }
+
     my $template = Text::Template->new(
         TYPE   => 'STRING',
         SOURCE => $source,
@@ -597,15 +608,19 @@ sub interpol_directive {
     );
 
     my $fill_in = { self => \$self };
+
     #TODO reference keys by value instead of $self->
     # my @keys = keys %{$self};
-    $fill_in->{INPUT} = $self->INPUT;
+    # $fill_in->{INPUT} = $self->INPUT;
     $fill_in->{sample} = $self->sample if $self->has_sample;
 
     $text = $template->fill_in( HASH => $fill_in, BROKEN => \&my_broken );
 
+    $self->interpol_directive_cache->{$source} = $text;
     return $text;
 }
+
+memoize('my_broken');
 
 sub my_broken {
     my %args    = @_;
@@ -667,13 +682,13 @@ sub process_directive {
           $self->$k;
     }
     else {
-        my $text = $self->interpol_directive($v);
+        my $text = '';
+        $text = $self->interpol_directive($v) if $v;
         if ( $path && $text ne '' ) {
             $text = path($text)->absolute if $self->coerce_abs_dir;
             $self->$k("$text");
             return;
         }
-
         $self->$k($text);
     }
 }
@@ -697,7 +712,8 @@ sub walk_directives {
     return if ref($ref);
     return unless $ref;
 
-    my $text = $self->interpol_directive($ref);
+    my $text = '';
+    $text = $self->interpol_directive($ref) if $ref;
     if ($path) {
         $text = path($text)->absolute if $self->coerce_abs_dir;
         $text = "$text";
@@ -732,8 +748,14 @@ sub update_directive {
         #We are getting the whole hash, just return
         return;
     }
-
 }
+
+sub BUILD { }
+
+after 'BUILD' => sub {
+    my $self = shift;
+    $self->interpol_directive_cache( {} );
+};
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

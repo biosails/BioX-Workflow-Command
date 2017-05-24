@@ -59,7 +59,7 @@ sub execute {
 
         my $details = File::Details->new($file);
         my $mtime   = ctime( stat($file)->mtime );
-        $self->track_files->{$file}->{mtime} = $mtime;
+        # $self->track_files->{$file}->{mtime} = $mtime;
     }
 
     #Preserve the exit code of the previous process
