@@ -58,10 +58,10 @@ sub post_process_rules {
 
     #Create flags for outputs that have a similar input
     $self->app_log->info();
-    $self->app_log->info( 'Selected rules:' . "\t"
-          . join( ', ', @{ $self->select_rule_keys } )
-          . "\n" )
-      if $self->use_timestamps;
+    # $self->app_log->info( 'Selected rules:' . "\t"
+    #       . join( ', ', @{ $self->select_rule_keys } )
+    #       . "\n" )
+    #   if $self->use_timestamps;
     # $self->app_log->info( 'Looking for orphan INPUTs '
     #       . '(INPUTs with no corresponding OUTPUTs)' );
 
