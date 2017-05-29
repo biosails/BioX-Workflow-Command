@@ -7,6 +7,7 @@ use Data::Walk;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use Try::Tiny;
+use Path::Tiny;
 
 with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
@@ -582,15 +583,6 @@ sub template_process {
 
     $self->process_obj->{ $self->rule_name }->{meta} =
       $self->write_rule_meta('before_meta');
-
-   # return unless $self->use_timestamps;
-   # if ( $self->local_attr->{_modified} ) {
-   #     $self->app_log->info(
-   #         'One or more files were modified or are not logged for this rule');
-   # }
-   # else {
-   #     $self->app_log->info('Zero files were modified for this rule');
-   # }
 }
 
 sub use_iterables {
@@ -632,12 +624,14 @@ sub check_iterables {
     #First check the global for any lists
     my $use_iters = $self->use_iterables;
 
-    if ( ! $use_iters ) {
+    $self->walk_indir_outdir($use_iters);
+
+    if ( !$use_iters ) {
         $texts = $self->in_template_process( $sample, $texts );
         return $texts;
     }
 
-    my $all = $use_iters->[0];
+    my $all  = $use_iters->[0];
     my $elem = $use_iters->[1];
 
     ##TODO This should be a separate function
@@ -709,6 +703,63 @@ sub get_keys {
     $self->rule_keys( \@global_keys );
 }
 
+##TODO Clean this up and merge with the other walk_iterables
+sub walk_indir_outdir {
+    my $self      = shift;
+    my $use_iters = shift;
+
+    my $attr = dclone( $self->local_attr );
+    $self->check_indir_outdir($attr);
+
+    my $dummy_sample = $self->dummy_sample;
+    $attr->sample($dummy_sample);
+    my $text = $attr->interpol_directive( $attr->outdir );
+
+    if ( !$use_iters ) {
+        foreach my $sample ( $attr->all_samples ) {
+            my $new_text = $text;
+            $new_text =~ s/$dummy_sample/$sample/g;
+            $new_text = path($new_text)->absolute if $attr->coerce_abs_dir;
+            $new_text = path($new_text)           if !$attr->coerce_abs_dir;
+            $self->decide_create_outdir( $attr, $new_text );
+        }
+        return;
+    }
+
+    my $all  = $use_iters->[0];
+    my $elem = $use_iters->[1];
+
+    ##TODO This should be a separate function
+    my $dummy_iter = $self->dummy_iterable;
+    $attr->$elem($dummy_iter);
+
+    foreach my $chunk ( $self->local_attr->$all ) {
+        my $new_text = $text;
+        $new_text =~ s/$dummy_iter/$chunk/g;
+        $new_text = path($new_text)->absolute if $attr->coerce_abs_dir;
+        $new_text = path($new_text)           if !$attr->coerce_abs_dir;
+        $self->decide_create_outdir( $attr, $new_text );
+    }
+}
+
+sub decide_create_outdir {
+    my $self = shift;
+    my $attr = shift;
+    my $dir  = shift;
+
+    if ( $attr->create_outdir ) {
+
+        try {
+            $dir->mkpath;
+        }
+        catch {
+            $self->app_log->fatal( "We were not able to make the directory.\n\t"
+                  . $attr->outdir
+                  . "\n\tError: $!" );
+        };
+    }
+}
+
 sub walk_attr {
     my $self = shift;
 
@@ -719,19 +770,12 @@ sub walk_attr {
 
     $attr->walk_process_data( $self->rule_keys );
 
-    if ( $attr->create_outdir && !$attr->outdir->is_dir ) {
-
-        try {
-            $attr->outdir->mkpath;
-        }
-        catch {
-            $self->app_log->fatal( "We were not able to make the directory.\n\t"
-                  . $attr->outdir
-                  . "\n\tError: $!" );
-        };
-    }
-
     return $attr;
+}
+
+sub make_outdirs {
+    my $self = shift;
+
 }
 
 sub eval_process {

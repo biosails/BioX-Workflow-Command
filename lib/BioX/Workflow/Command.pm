@@ -12,6 +12,7 @@ use File::Path qw(make_path);
 app_strict 0;
 
 # TODO move this after I have a better idea of where it is going
+# TODO nope
 option 'cache_dir' => (
     is      => 'rw',
     isa     => Path,
@@ -32,8 +33,8 @@ sub BUILD {
 before 'BUILD' => sub {
     my $self = shift;
 
-    make_path( $self->cache_dir );
-    make_path(File::Spec->catdir($self->cache_dir, 'logs'));
+    # make_path( $self->cache_dir );
+    # make_path(File::Spec->catdir($self->cache_dir, 'logs'));
 };
 
 no Moose;
