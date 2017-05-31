@@ -520,37 +520,6 @@ EOF
     $self->app_log->fatal($rule_example);
 }
 
-=head3 carry_directives
-
-At the beginning of each rule the previous outdir should be the new indir, and the previous OUTPUT should be the new INPUT
-
-Stash should be carried over
-
-Outdir should be global_attr->outdir/rule_name
-
-=cut
-
-sub carry_directives {
-    my $self = shift;
-
-    $self->local_attr->outdir(
-        $self->global_attr->outdir . '/' . $self->rule_name );
-
-    return unless $self->has_p_rule_name;
-
-    $self->local_attr->indir( dclone( $self->p_local_attr->outdir ) );
-
-    if ( $self->p_local_attr->has_OUTPUT ) {
-        if ( ref( $self->p_local_attr->OUTPUT ) ) {
-            $self->local_attr->INPUT( dclone( $self->p_local_attr->OUTPUT ) );
-        }
-        else {
-            $self->local_attr->INPUT( $self->p_local_attr->OUTPUT );
-        }
-    }
-
-    $self->local_attr->stash( dclone( $self->p_local_attr->stash ) );
-}
 
 =head3 template_process
 
@@ -571,6 +540,7 @@ sub template_process {
 
     my $dummy_sample = $self->dummy_sample;
     my $dummy_texts = $self->check_iterables( $dummy_sample, [] );
+
     foreach my $sample ( $self->all_samples ) {
         foreach my $text ( @{$dummy_texts} ) {
             my $new_text = $text;
@@ -647,7 +617,6 @@ sub check_iterables {
             push( @$texts, $new_text );
         }
     }
-    ##
 
     return $texts;
 }
@@ -665,6 +634,35 @@ sub in_template_process {
     push( @{$texts}, $text ) if $self->print_within_rule;
 
     return $texts;
+}
+
+sub walk_attr {
+    my $self = shift;
+
+    my $attr = dclone( $self->local_attr );
+    $self->check_indir_outdir($attr);
+
+    $DB::single = 2;
+
+    $attr->walk_process_data( $self->rule_keys );
+
+    return $attr;
+}
+
+sub eval_process {
+    my $self = shift;
+
+    my $attr = $self->walk_attr;
+    $attr->sample( $self->sample ) if $self->has_sample;
+
+    my $process = $self->local_rule->{ $self->rule_name }->{process};
+    my $text    = $attr->interpol_directive($process);
+    $text = clean_text($text);
+
+    $self->walk_FILES($attr);
+    $self->clear_files;
+
+    return $text;
 }
 
 sub get_global_keys {
@@ -704,16 +702,21 @@ sub get_keys {
 }
 
 ##TODO Clean this up and merge with the other walk_iterables
+##TODO Write more tests
 sub walk_indir_outdir {
     my $self      = shift;
     my $use_iters = shift;
 
+    ##TODO This is redundant...
     my $attr = dclone( $self->local_attr );
-    $self->check_indir_outdir($attr);
-
     my $dummy_sample = $self->dummy_sample;
     $attr->sample($dummy_sample);
-    my $text = $attr->interpol_directive( $attr->outdir );
+
+    if ( $attr->outdir =~ m/\{\$/ ) {
+        $attr->walk_process_data( $self->rule_keys );
+    }
+
+    my $text = $attr->interpol_directive( $self->local_attr->outdir );
 
     if ( !$use_iters ) {
         foreach my $sample ( $attr->all_samples ) {
@@ -747,51 +750,17 @@ sub decide_create_outdir {
     my $attr = shift;
     my $dir  = shift;
 
-    if ( $attr->create_outdir ) {
+    return unless $attr->create_outdir;
+    return unless $dir;
 
-        try {
-            $dir->mkpath;
-        }
-        catch {
-            $self->app_log->fatal( "We were not able to make the directory.\n\t"
-                  . $attr->outdir
-                  . "\n\tError: $!" );
-        };
+    try {
+        $dir->mkpath;
     }
-}
-
-sub walk_attr {
-    my $self = shift;
-
-    my $attr = dclone( $self->local_attr );
-    $self->check_indir_outdir($attr);
-
-    $DB::single = 2;
-
-    $attr->walk_process_data( $self->rule_keys );
-
-    return $attr;
-}
-
-sub make_outdirs {
-    my $self = shift;
-
-}
-
-sub eval_process {
-    my $self = shift;
-
-    my $attr = $self->walk_attr;
-    $attr->sample( $self->sample ) if $self->has_sample;
-
-    my $process = $self->local_rule->{ $self->rule_name }->{process};
-    my $text    = $attr->interpol_directive($process);
-    $text = clean_text($text);
-
-    $self->walk_FILES($attr);
-    $self->clear_files;
-
-    return $text;
+    catch {
+        $self->app_log->fatal( "We were not able to make the directory.\n\t"
+              . $attr->outdir
+              . "\n\tError: $!" );
+    };
 }
 
 sub clean_text {
@@ -856,6 +825,8 @@ sub print_rule {
     return $print_rule;
 }
 
+##This is not necessary without the use_timestamps
+##But I will leave it in as a placeholder
 sub print_within_rule {
     my $self = shift;
 
@@ -895,6 +866,7 @@ sub check_indir_outdir {
 
     # If indir/outdir is specified in the local config
     # then we don't evaluate it
+
     foreach my $dir ( ( 'indir', 'outdir' ) ) {
         if ( grep /$dir/, @{ $self->local_rule_keys } ) {
             next;
@@ -917,6 +889,38 @@ sub check_indir_outdir {
         $attr->$dir($new_dir);
     }
 
+}
+
+=head3 carry_directives
+
+At the beginning of each rule the previous outdir should be the new indir, and the previous OUTPUT should be the new INPUT
+
+Stash should be carried over
+
+Outdir should be global_attr->outdir/rule_name
+
+=cut
+
+sub carry_directives {
+    my $self = shift;
+
+    $self->local_attr->outdir(
+        $self->global_attr->outdir . '/' . $self->rule_name );
+
+    return unless $self->has_p_rule_name;
+
+    $self->local_attr->indir( dclone( $self->p_local_attr->outdir ) );
+
+    if ( $self->p_local_attr->has_OUTPUT ) {
+        if ( ref( $self->p_local_attr->OUTPUT ) ) {
+            $self->local_attr->INPUT( dclone( $self->p_local_attr->OUTPUT ) );
+        }
+        else {
+            $self->local_attr->INPUT( $self->p_local_attr->OUTPUT );
+        }
+    }
+
+    $self->local_attr->stash( dclone( $self->p_local_attr->stash ) );
 }
 
 1;

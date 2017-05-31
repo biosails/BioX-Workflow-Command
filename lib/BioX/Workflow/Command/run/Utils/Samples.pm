@@ -162,8 +162,8 @@ sub get_samples {
     #But we don't keep it around, because that would be madness
     #TODO Fix this we should process these the same way we process rule names
     $attr       = dclone( $self->global_attr );
-    $DB::single = 2;
-    if ( $attr->indir =~ m/\{\$self/ ) {
+    # $DB::single = 2;
+    if ( $attr->indir =~ m/\{\$/ ) {
         $attr->walk_process_data( $self->global_keys );
     }
 
