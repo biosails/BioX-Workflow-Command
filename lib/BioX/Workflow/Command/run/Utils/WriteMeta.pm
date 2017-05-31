@@ -89,6 +89,13 @@ sub write_workflow_meta_start {
     $self->fh->say("$self->{comment_char} Starting Workflow\n");
     $self->fh->say("$self->{comment_char}");
     $self->fh->say("$self->{comment_char}");
+
+
+    $self->fh->say("$self->{comment_char} Samples:");
+    $self->fh->say("$self->{comment_char} \t".join(', ', @{$self->samples}));
+    $self->fh->say("$self->{comment_char}");
+    $self->fh->say("$self->{comment_char}");
+
     $self->fh->say("$self->{comment_char} Global Variables:");
 
     foreach my $k ( $self->all_global_keys ) {

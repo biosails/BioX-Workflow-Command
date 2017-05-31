@@ -134,6 +134,7 @@ sub test_002 {
     my ( $test, $test_dir, $rules ) = construct_tests;
 
     $test->samples( [ 'Sample_01', 'Sample_02' ] );
+    $test->global_attr->samples( [ 'Sample_01', 'Sample_02' ] );
 
     # $test->stdout(1);
     $test->set_rule_names;
@@ -142,6 +143,9 @@ sub test_002 {
     foreach my $rule ( @{$rules} ) {
         _init_rule( $test, $rule );
     }
+
+    ok(-d 'data/processed/Sample_01', 'Sample Dir exists');
+    ok(-d 'data/processed/Sample_02', 'Sample Dir exists');
 
     # diag Dumper( $test->global_attr->some_list );
     # diag Dumper( $test->global_attr->use_somes );
