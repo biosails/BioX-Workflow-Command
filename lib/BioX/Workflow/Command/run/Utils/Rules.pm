@@ -736,6 +736,8 @@ sub walk_indir_outdir {
     my $dummy_iter = $self->dummy_iterable;
     $attr->$elem($dummy_iter);
 
+    ##BUG FIX - If outdirs have iterables this will be bad
+
     foreach my $chunk ( $self->local_attr->$all ) {
         my $new_text = $text;
         $new_text =~ s/$dummy_iter/$chunk/g;
