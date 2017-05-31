@@ -520,7 +520,6 @@ EOF
     $self->app_log->fatal($rule_example);
 }
 
-
 =head3 template_process
 
 Do the actual processing of the rule->process
@@ -594,7 +593,7 @@ sub check_iterables {
     #First check the global for any lists
     my $use_iters = $self->use_iterables;
 
-    $self->walk_indir_outdir($use_iters);
+    # $self->walk_indir_outdir($use_iters);
 
     if ( !$use_iters ) {
         $texts = $self->in_template_process( $sample, $texts );
@@ -642,8 +641,6 @@ sub walk_attr {
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
 
-    $DB::single = 2;
-
     $attr->walk_process_data( $self->rule_keys );
 
     return $attr;
@@ -654,6 +651,8 @@ sub eval_process {
 
     my $attr = $self->walk_attr;
     $attr->sample( $self->sample ) if $self->has_sample;
+
+    $self->walk_indir_outdir($attr);
 
     my $process = $self->local_rule->{ $self->rule_name }->{process};
     my $text    = $attr->interpol_directive($process);
@@ -701,42 +700,55 @@ sub get_keys {
     $self->rule_keys( \@global_keys );
 }
 
-##TODO Clean this up and merge with the other walk_iterables
 ##TODO Write more tests
 sub walk_indir_outdir {
-    my $self      = shift;
-    my $use_iters = shift;
+    my $self = shift;
+    my $attr = shift;
 
-    ##TODO This is redundant...
-    my $attr = dclone( $self->local_attr );
+    my $text = $attr->interpol_directive( $attr->outdir );
+
+    $DB::single = 2;
+    $self->walk_indir_outdir_sample( $attr, $text );
+}
+
+sub walk_indir_outdir_sample {
+    my $self = shift;
+    my $attr = shift;
+    my $text = shift;
+
+    my $use_iters    = $self->use_iterables;
     my $dummy_sample = $self->dummy_sample;
-    $attr->sample($dummy_sample);
 
-    if ( $attr->outdir =~ m/\{\$/ ) {
-        $attr->walk_process_data( $self->rule_keys );
-    }
+    foreach my $sample ( $attr->all_samples ) {
+        my $new_text = $text;
+        $new_text =~ s/$dummy_sample/$sample/g;
+        $DB::single = 2;
 
-    my $text = $attr->interpol_directive( $self->local_attr->outdir );
-
-    if ( !$use_iters ) {
-        foreach my $sample ( $attr->all_samples ) {
-            my $new_text = $text;
-            $new_text =~ s/$dummy_sample/$sample/g;
+        if ($use_iters) {
+            $self->walk_indir_outdir_iters(  $use_iters, $attr,
+                $new_text );
+        }
+        else {
             $new_text = path($new_text)->absolute if $attr->coerce_abs_dir;
             $new_text = path($new_text)           if !$attr->coerce_abs_dir;
             $self->decide_create_outdir( $attr, $new_text );
         }
-        return;
     }
+}
+
+sub walk_indir_outdir_iters {
+    my $self      = shift;
+    my $use_iters = shift;
+    my $attr      = shift;
+    my $text      = shift;
+
+    return unless $use_iters;
 
     my $all  = $use_iters->[0];
     my $elem = $use_iters->[1];
 
-    ##TODO This should be a separate function
     my $dummy_iter = $self->dummy_iterable;
     $attr->$elem($dummy_iter);
-
-    ##BUG FIX - If outdirs have iterables this will be bad
 
     foreach my $chunk ( $self->local_attr->$all ) {
         my $new_text = $text;
