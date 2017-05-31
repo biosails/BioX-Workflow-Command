@@ -57,6 +57,7 @@ sub execute {
             next;
         }
 
+        ##TODO Make this a table
         my $details = File::Details->new($file);
         my $mtime   = ctime( stat($file)->mtime );
         # $self->track_files->{$file}->{mtime} = $mtime;

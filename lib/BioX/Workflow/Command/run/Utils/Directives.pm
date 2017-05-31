@@ -592,14 +592,14 @@ sub interpol_directive {
     my $source = shift;
     my $text   = '';
 
-    if ( exists $self->interpol_directive_cache->{$source} ) {
-        return $self->interpol_directive_cache->{$source};
-    }
+    # if ( exists $self->interpol_directive_cache->{$source} && $source !~ m/{\$/ ) {
+    #     return $self->interpol_directive_cache->{$source};
+    # }
 
-    if ( $source !~ m/{\$/ ) {
-        $self->interpol_directive_cache->{$source} = $source;
-        return $source;
-    }
+    # if ( $source !~ m/{\$/ ) {
+    #     $self->interpol_directive_cache->{$source} = $source;
+    #     return $source;
+    # }
 
     my $template = Text::Template->new(
         TYPE   => 'STRING',
