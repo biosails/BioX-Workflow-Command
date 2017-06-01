@@ -131,11 +131,14 @@ sub print_stats_rules {
     $self->fh->say( $self->comment_char );
     $self->fh->say("");
 
+    foreach my $sample ($self->all_samples){
+    $self->fh->say("");
     $self->fh->say(
-        "biox stats --samples " . join( ',', @{ $self->samples } ) . " \\" );
+        "biox stats --samples " . $sample . " \\" );
     $self->fh->say( "--select_rules " . $rule . " \\" );
     $self->fh->say( "-w " . $self->cached_workflow );
     $self->fh->say("");
+    }
 }
 
 =head3 dedeps
