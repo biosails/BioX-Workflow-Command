@@ -628,8 +628,8 @@ sub in_template_process {
     $self->local_attr->sample($sample);
     $self->sample($sample);
     my $text = $self->eval_process();
-    my $log  = $self->write_file_log();
-    $text .= $log;
+    # my $log  = $self->write_file_log();
+    # $text .= $log;
     push( @{$texts}, $text ) if $self->print_within_rule;
 
     return $texts;

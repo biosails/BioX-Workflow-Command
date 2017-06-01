@@ -3,6 +3,10 @@ package BioX::Workflow::Command::run::Utils::Attributes;
 use MooseX::App::Role;
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use Storable qw(dclone);
+use File::Copy;
+use File::Spec;
+use File::Basename;
+use DateTime;
 
 =head1 Name
 
@@ -32,6 +36,30 @@ option 'samples' => (
         join_samples => 'join',
     },
     cmd_aliases => ['s'],
+);
+
+option 'run_stats' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 1,
+);
+
+has 'cached_workflow' => (
+    is      => 'rw',
+    isa     => 'Str',
+    lazy    => 1,
+    default => '',
+    default => sub {
+        my $self = shift;
+
+        my ( $file, $dir, $ext ) = fileparse( $self->workflow, qr/\.[^.]*/ );
+        my $now = DateTime->now;
+        my $ymd = $now->ymd;
+        my $hms = $now->hms;
+        $hms =~ s/:/-/g;
+        return File::Spec->catdir( $self->cache_dir, 'workflows',
+            $file . "_$ymd" . "_$hms" . $ext );
+    }
 );
 
 =head2 Attributes

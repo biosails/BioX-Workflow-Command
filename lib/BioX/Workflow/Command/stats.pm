@@ -148,7 +148,7 @@ sub gen_row {
 
         my $rel = '';
         $rel = File::Spec->abs2rel($file) if $self->use_full;
-        $rel = basename($file);
+        $rel = basename($file) unless $self->use_full;
 
         #Add the filename
         push( @trow, $rel );
@@ -168,7 +168,6 @@ sub gen_row {
         }
         $self->table_log->addRow( \@trow );
     }
-
 }
 
 sub iter_file_samples {
@@ -192,7 +191,6 @@ sub iter_file_samples {
         }
         $self->gen_row( $file, $cond, $sample, \@sample_files );
     }
-
 }
 
 sub iter_file_chunks {

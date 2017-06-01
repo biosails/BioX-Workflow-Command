@@ -269,27 +269,6 @@ sub write_hpc_array_meta {
 
     %lookup = %{$self->iter_hpc_array($self->global_attr->HPC, \%lookup)};
     %lookup = %{$self->iter_hpc_array($self->local_attr->HPC, \%lookup)};
-    ##TODO add in global hpc meta
-    # foreach my $href ( @{ $self->global_attr->HPC } ) {
-    #     if ( ref($href) eq 'HASH' ) {
-    #         my @keys = keys %{$href};
-    #         map { $lookup{$_} = $href->{$_} } @keys;
-    #     }
-    #     else {
-    #         $self->warn_hpc_meta;
-    #         return;
-    #     }
-    # }
-    # foreach my $href ( @{ $self->local_attr->HPC } ) {
-    #     if ( ref($href) eq 'HASH' ) {
-    #         my @keys = keys %{$href};
-    #         map { $lookup{$_} = $href->{$_} } @keys;
-    #     }
-    #     else {
-    #         $self->warn_hpc_meta;
-    #         return;
-    #     }
-    # }
 
     if ( !exists $lookup{jobname} ) {
         $self->local_attr->add_before_meta(
