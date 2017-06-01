@@ -6,6 +6,7 @@ use MooseX::App::Role;
 
 use Cwd qw(getcwd);
 use Try::Tiny;
+use strict;
 
 with 'MooseX::Object::Pluggable';
 
