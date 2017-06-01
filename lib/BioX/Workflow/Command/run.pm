@@ -3,6 +3,8 @@ package BioX::Workflow::Command::run;
 use v5.10;
 use MooseX::App::Command;
 
+use File::Copy;
+
 extends 'BioX::Workflow::Command';
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use BioX::Workflow::Command::run::Utils::Directives;
@@ -45,6 +47,9 @@ sub execute {
       $self->app_log->warn('Exiting now.');
       return;
     }
+
+
+        copy($self->workflow, $self->cached_workflow );
     $self->apply_global_attributes;
     $self->get_global_keys;
     $self->get_samples;
