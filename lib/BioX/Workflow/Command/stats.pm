@@ -8,8 +8,10 @@ use Text::ASCIITable;
 use Number::Bytes::Human qw(format_bytes parse_bytes);
 use File::Details;
 use File::Basename;
+use List::MoreUtils qw(uniq);
 
 extends qw(  BioX::Workflow::Command );
+
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use BioX::Workflow::Command::run::Utils::Directives;
 
@@ -138,7 +140,8 @@ sub gen_row {
     my $sample       = shift;
     my $sample_files = shift;
 
-    foreach my $file (@$sample_files) {
+    my @uniq = uniq(@{$sample_files});
+    foreach my $file (@uniq) {
 
         my @trow = ();
 
@@ -147,11 +150,14 @@ sub gen_row {
         push( @trow, $cond );
 
         my $rel = '';
+        $rel = $file ;
         $rel = File::Spec->abs2rel($file) if $self->use_full;
-        $rel = basename($file) unless $self->use_full;
+
+        my $basename = basename($file) unless $self->use_full;
 
         #Add the filename
-        push( @trow, $rel );
+        push( @trow, $rel ) if $self->use_full;
+        push( @trow, $basename ) if !$self->use_full;
 
         #Does the file exist?
         if ( -e $file ) {
