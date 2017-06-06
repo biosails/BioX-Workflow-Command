@@ -140,8 +140,7 @@ sub gen_row {
     my $sample       = shift;
     my $sample_files = shift;
 
-    my @uniq = uniq(@{$sample_files});
-    foreach my $file (@uniq) {
+    foreach my $file (@{$sample_files}) {
 
         my @trow = ();
 
@@ -195,6 +194,7 @@ sub iter_file_samples {
         else {
             push( @sample_files, $new_file );
         }
+        @sample_files = uniq(@sample_files);
         $self->gen_row( $file, $cond, $sample, \@sample_files );
     }
 }
