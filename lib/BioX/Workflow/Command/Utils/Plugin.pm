@@ -3,6 +3,7 @@ package BioX::Workflow::Command::Utils::Plugin;
 use MooseX::App::Role;
 
 #TODO make this into a general Plugin Loader
+with 'BioX::Workflow::Command::Utils::Log';
 
 use Cwd qw(getcwd);
 use Try::Tiny;
@@ -49,25 +50,16 @@ option 'plugins_opts' => (
 
 =cut
 
-sub BUILD {}
+sub BUILD { }
 
 after 'BUILD' => sub {
-  my $self = shift;
-
-  return unless $self->plugins;
-
-  $self->app_load_plugins( $self->plugins );
-  $self->parse_plugin_opts( $self->plugins_opts );
-};
-
-sub gen_load_plugins {
     my $self = shift;
 
     return unless $self->plugins;
 
     $self->app_load_plugins( $self->plugins );
     $self->parse_plugin_opts( $self->plugins_opts );
-}
+};
 
 =head3 app_load_plugin
 
@@ -85,7 +77,8 @@ sub app_load_plugins {
         }
         catch {
             $self->app_log->warn("Could not load plugin $plugin!\n$_");
-        }
+        };
+        $self->app_log->info( 'Loaded plugin ' . $plugin );
     }
 
 }

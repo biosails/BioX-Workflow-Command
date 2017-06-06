@@ -11,6 +11,15 @@ use File::Path qw(make_path);
 
 app_strict 0;
 
+with 'BioX::Workflow::Command::Utils::Log';
+with 'BioX::Workflow::Command::Utils::Plugin';
+with 'HPC::Runner::Command::Utils::ManyConfigs';
+
+option 'config_base' => (
+    is      => 'rw',
+    default => '.bioxworkflow',
+);
+
 option 'cache_dir' => (
     is      => 'rw',
     isa     => Path,
@@ -21,19 +30,19 @@ option 'cache_dir' => (
     documentation =>
       'BioX-Workflow will cache some information during your runs. '
       . 'Delete with caution! '
-      . '[Default: '.getcwd().'/biox-cache. ]'
+      . '[Default: '
+      . getcwd()
+      . '/biox-cache. ]'
 );
 
-sub BUILD {
-  my $self = shift;
-}
+sub BUILD {}
 
 before 'BUILD' => sub {
     my $self = shift;
 
     make_path( $self->cache_dir );
-    make_path(File::Spec->catdir($self->cache_dir, 'logs'));
-    make_path(File::Spec->catdir($self->cache_dir, 'workflows'));
+    make_path( File::Spec->catdir( $self->cache_dir, 'logs' ) );
+    make_path( File::Spec->catdir( $self->cache_dir, 'workflows' ) );
 };
 
 no Moose;

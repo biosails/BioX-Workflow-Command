@@ -15,9 +15,10 @@ with 'BioX::Workflow::Command::run::Utils::Rules';
 with 'BioX::Workflow::Command::run::Utils::WriteMeta';
 with 'BioX::Workflow::Command::run::Utils::Files::TrackChanges';
 with 'BioX::Workflow::Command::run::Utils::Files::ResolveDeps';
-with 'BioX::Workflow::Command::Utils::Log';
 with 'BioX::Workflow::Command::Utils::Files';
-with 'BioX::Workflow::Command::Utils::Plugin';
+
+# with 'BioX::Workflow::Command::Utils::Plugin';
+# with 'BioX::Workflow::Command::Utils::Log';
 
 command_short_description 'Run your workflow';
 command_long_description
@@ -28,7 +29,6 @@ command_long_description
 This is the main class of the `biox-workflow.pl run` command.
 
 =cut
-
 
 =head2 Attributes
 
@@ -41,15 +41,14 @@ This is the main class of the `biox-workflow.pl run` command.
 sub execute {
     my $self = shift;
 
-    $self->app_log->info('Printing out file info for '.$self->workflow);
+    $self->app_log->info( 'Printing out file info for ' . $self->workflow );
     $self->print_opts;
-    if(! $self->load_yaml_workflow){
-      $self->app_log->warn('Exiting now.');
-      return;
+    if ( !$self->load_yaml_workflow ) {
+        $self->app_log->warn('Exiting now.');
+        return;
     }
 
-
-        copy($self->workflow, $self->cached_workflow );
+    copy( $self->workflow, $self->cached_workflow );
     $self->apply_global_attributes;
     $self->get_global_keys;
     $self->get_samples;
@@ -60,6 +59,7 @@ sub execute {
 }
 
 no Moose;
+
 __PACKAGE__->meta->make_immutable;
 
 1;
