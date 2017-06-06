@@ -48,11 +48,14 @@
             "DateTime" : "0",
             "DateTime::Format::Strptime" : "0",
             "File::Basename" : "0",
+            "File::Copy" : "0",
             "File::Details" : "0",
             "File::Find::Rule" : "0",
             "File::Path" : "0",
             "File::Spec" : "0",
             "File::stat" : "0",
+            "HPC::Runner::Command::Utils::ManyConfigs" : "0",
+            "List::MoreUtils" : "0",
             "List::Uniq" : "0",
             "Log::Log4perl" : "0",
             "Memoize" : "0",
@@ -79,6 +82,7 @@
             "YAML" : "0",
             "namespace::autoclean" : "0",
             "perl" : "v5.10.0",
+            "strict" : "0",
             "utf8" : "0"
          }
       },
@@ -93,21 +97,20 @@
             "Test::Class::Moose::Runner" : "0",
             "Test::More" : "0",
             "Text::Diff" : "0",
-            "YAML::XS" : "0",
-            "strict" : "0"
+            "YAML::XS" : "0"
          }
       }
    },
    "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
-         "web" : "https://github.com/jerowe/BioX-Workflow-Command/issues"
+         "web" : "https://github.com/biosails/BioX-Workflow-Command/issues"
       },
-      "homepage" : "https://github.com/jerowe/BioX-Workflow-Command",
+      "homepage" : "https://github.com/biosails/BioX-Workflow-Command",
       "repository" : {
          "type" : "git",
-         "url" : "https://github.com/jerowe/BioX-Workflow-Command.git",
-         "web" : "https://github.com/jerowe/BioX-Workflow-Command"
+         "url" : "https://github.com/biosails/BioX-Workflow-Command.git",
+         "web" : "https://github.com/biosails/BioX-Workflow-Command"
       }
    },
    "version" : "2.0.10",
