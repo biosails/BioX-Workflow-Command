@@ -490,36 +490,6 @@ sub sanity_check_rule {
         'Rule: ' . $self->rule_name . ' passes sanity check' );
 }
 
-sub sanity_check_fail {
-    my $self = shift;
-
-    my $rule_example = <<EOF;
-global:
-    - indir: data/raw
-    - outdir: data/processed
-    - file_rule: (sample.*)$
-    - by_sample_outdir: 1
-    - find_sample_bydir: 1
-    - copy1:
-        local:
-            - indir: '{\$self->my_dir}'
-            - INPUT: '{\$self->indir}/{\$sample}.csv'
-            - HPC:
-                - mem: '40GB'
-                - walltime: '40GB'
-        process: |
-            echo 'MyDir on {\$self->my_dir}'
-            echo 'Indir on {\$self->indir}'
-            echo 'Outdir on {\$self->outdir}'
-            echo 'INPUT on {\$self->INPUT}'
-EOF
-    $self->app_log->fatal('Skipping this rule.');
-    $self->app_log->fatal(
-'Here is an example workflow. For more information please see biox-workflow.pl new --help.'
-    );
-    $self->app_log->fatal($rule_example);
-}
-
 =head3 template_process
 
 Do the actual processing of the rule->process
@@ -553,6 +523,15 @@ sub template_process {
     $self->process_obj->{ $self->rule_name }->{meta} =
       $self->write_rule_meta('before_meta');
 }
+
+=head3 use_iterables
+
+Check the global and local keys to see if we are using any iterables
+
+  use_chroms: 1
+  use_chunks: 1
+
+=cut
 
 sub use_iterables {
     my $self = shift;
@@ -937,4 +916,33 @@ sub carry_directives {
     $self->local_attr->stash( dclone( $self->p_local_attr->stash ) );
 }
 
+sub sanity_check_fail {
+    my $self = shift;
+
+    my $rule_example = <<EOF;
+global:
+    - indir: data/raw
+    - outdir: data/processed
+    - file_rule: (sample.*)$
+    - by_sample_outdir: 1
+    - find_sample_bydir: 1
+    - copy1:
+        local:
+            - indir: '{\$self->my_dir}'
+            - INPUT: '{\$self->indir}/{\$sample}.csv'
+            - HPC:
+                - mem: '40GB'
+                - walltime: '40GB'
+        process: |
+            echo 'MyDir on {\$self->my_dir}'
+            echo 'Indir on {\$self->indir}'
+            echo 'Outdir on {\$self->outdir}'
+            echo 'INPUT on {\$self->INPUT}'
+EOF
+    $self->app_log->fatal('Skipping this rule.');
+    $self->app_log->fatal(
+'Here is an example workflow. For more information please see biox-workflow.pl new --help.'
+    );
+    $self->app_log->fatal($rule_example);
+}
 1;

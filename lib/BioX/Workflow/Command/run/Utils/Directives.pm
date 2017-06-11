@@ -426,6 +426,9 @@ sub create_attr {
                 if ( $k eq 'stash' ) {
                     $self->merge_stash($v);
                 }
+                elsif($self->can($k)){
+                  next;
+                }
                 elsif ( $k =~ m/_list/ ) {
                     $self->create_ITERABLE_attr( $meta, $k );
                 }
@@ -592,11 +595,12 @@ sub interpol_directive {
     my $source = shift;
     my $text   = '';
 
-    if ( exists $self->interpol_directive_cache->{$source} && $source !~ m/{\$/ ) {
+    #The $ is not always at the beginning
+    if ( exists $self->interpol_directive_cache->{$source} && $source !~ m/{/ ) {
         return $self->interpol_directive_cache->{$source};
     }
 
-    if ( $source !~ m/{\$/ ) {
+    if ( $source !~ m/{/ ) {
         $self->interpol_directive_cache->{$source} = $source;
         return $source;
     }
