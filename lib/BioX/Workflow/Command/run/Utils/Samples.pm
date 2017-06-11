@@ -152,16 +152,14 @@ sub get_samples {
     #Stupid resample
     $self->get_global_keys;
 
-    if ( $self->has_samples && !$self->resample ) {
-        my (@samples) = $self->sorted_samples;
-        $self->samples( \@samples );
-        return;
-    }
+    my $exists = $self->check_sample_exist;
+    return if $exists;
 
     #We need to evaluate the global_dirs incase the indir has a var
     #But we don't keep it around, because that would be madness
     #TODO Fix this we should process these the same way we process rule names
-    $attr       = dclone( $self->global_attr );
+    $attr = dclone( $self->global_attr );
+
     # $DB::single = 2;
     if ( $attr->indir =~ m/\{\$/ ) {
         $attr->walk_process_data( $self->global_keys );
@@ -223,6 +221,28 @@ sub get_samples {
     }
 
     $self->write_sample_meta;
+}
+
+sub check_sample_exist {
+    my $self = shift;
+
+    my $exists  = 0;
+    if ( $self->has_samples && !$self->resample ) {
+        my (@samples) = $self->sorted_samples;
+        $self->samples( \@samples );
+        $self->app_log->info('Samples passed in on command line.');
+        $exists = 1;
+    }
+    elsif ( $self->global_attr->has_samples ) {
+        my (@samples) = @{$self->global_attr->samples};
+        @samples = sort(@samples);
+        $self->samples( \@samples );
+        $self->app_log->info('Samples were defined in the global key.');
+        $exists = 1;
+    }
+
+    $self->write_sample_meta if $exists;
+    return $exists;
 }
 
 =head2 match_samples

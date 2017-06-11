@@ -1,4 +1,4 @@
-package TestsFor::BioX::Workflow::Command::run::Test006;
+package TestsFor::BioX::Workflow::Command::run::Test007;
 
 use Test::Class::Moose;
 use Cwd;
@@ -29,19 +29,8 @@ sub write_test_file {
             { outdir            => 'data/processed' },
             { find_sample_bydir => 1 },
             { by_sample_outdir  => 1 },
-            {
-                chunks => {
-                    start => 1,
-                    end   => 10,
-                    step  => 1,
-                }
-            },
-            {
-                use_chunks => 1,
-            },
-            {
-                some_list => [ 1, 2, 3 ],
-            },
+            { chroms_list => [1,2,3,4,5]},
+            { samples => ['Sample_01']},
         ],
         rules => [
             {
@@ -54,21 +43,6 @@ sub write_test_file {
                         },
                         { OUTPUT => ['some_output_rule1'] },
                         { use_chunks => 1 },
-                    ],
-                    process =>
-'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
-                },
-            },
-            {
-                t3_rule2 => {
-                    'local' => [
-                        { root_dir => 'data/raw' },
-                        {
-                            INPUT =>
-                              '{$self->root_dir}/{$sample}/some_input_rule1'
-                        },
-                        { use_chunks => 1 },
-                        { OUTPUT     => ['some_output_rule1'] },
                     ],
                     process =>
 'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
@@ -105,7 +79,9 @@ sub construct_tests {
 sub test_001 {
     my ( $test, $test_dir, $rules ) = construct_tests;
 
-    $test->samples( [ 'Sample_01', 'Sample_02' ] );
+    $test->check_sample_exist;
+    is_deeply($test->samples, ['Sample_01']);
+    is_deeply($test->global_attr->chroms_list, [1,2,3,4,5]);
 
     # $test->stdout(1);
     $test->set_rule_names;
@@ -115,44 +91,17 @@ sub test_001 {
         _init_rule( $test, $rule );
     }
 
-    # $test->auto_deps(1);
     $test->post_process_rules;
+    is_deeply($test->samples, ['Sample_01']);
 
-    # diag(Dumper($test->select_rule_keys));
-    # diag(Dumper($test->process_obj->{t3_rule1}->{text}));
-    my $text = $test->process_obj->{t3_rule1}->{text};
-    is( scalar( @{$text} ), 20 );
-    $text = $test->process_obj->{t3_rule2}->{text};
-    # is( scalar( @{$text} ), 2 );
+    diag Dumper ($test->global_attr->chroms_list);
+    diag Dumper ($test->global_attr->samples);
+    diag Dumper($test->global_attr->has_samples);
+
 
     ok(1);
 }
 
-#TODO This needs to be in a separate test
-
-sub test_002 {
-    my ( $test, $test_dir, $rules ) = construct_tests;
-
-    $test->samples( [ 'Sample_01', 'Sample_02' ] );
-    $test->global_attr->samples( [ 'Sample_01', 'Sample_02' ] );
-
-    # $test->stdout(1);
-    $test->set_rule_names;
-    $test->filter_rule_keys;
-
-    foreach my $rule ( @{$rules} ) {
-        _init_rule( $test, $rule );
-    }
-
-    ok(-d 'data/processed/Sample_01', 'Sample Dir exists');
-    ok(-d 'data/processed/Sample_02', 'Sample Dir exists');
-
-    # diag Dumper( $test->global_attr->some_list );
-    # diag Dumper( $test->global_attr->use_somes );
-    # diag Dumper( $test->global_attr->some );
-    ok(1);
-
-}
 
 sub _init_rule {
     my $test = shift;

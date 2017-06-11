@@ -59,6 +59,11 @@ after 'BUILD' => sub {
 
     $self->app_load_plugins( $self->plugins );
     $self->parse_plugin_opts( $self->plugins_opts );
+
+    ##Must reload the configs to get any options from the plugins
+    if ( $self->has_config_files ) {
+        $self->load_configs;
+    }
 };
 
 =head3 app_load_plugin

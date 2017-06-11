@@ -13,5 +13,6 @@ Test::Class::Moose::Runner->new(
         'TestsFor::BioX::Workflow::Command::run::Test004',
         'TestsFor::BioX::Workflow::Command::run::Test005',
         'TestsFor::BioX::Workflow::Command::run::Test006',
+        'TestsFor::BioX::Workflow::Command::run::Test007',
     ],
 )->runtests;
