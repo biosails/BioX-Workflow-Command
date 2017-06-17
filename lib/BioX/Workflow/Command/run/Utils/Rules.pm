@@ -191,6 +191,7 @@ has 'global_keys' => (
     handles => {
         all_global_keys => 'elements',
         has_global_keys => 'count',
+        first_index_global_keys => 'first_index',
     },
 );
 
@@ -923,7 +924,7 @@ sub sanity_check_fail {
 global:
     - indir: data/raw
     - outdir: data/processed
-    - file_rule: (sample.*)$
+    - sample_rule: (sample.*)$
     - by_sample_outdir: 1
     - find_sample_bydir: 1
     - copy1:

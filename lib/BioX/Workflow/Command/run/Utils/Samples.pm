@@ -165,7 +165,13 @@ sub get_samples {
         $attr->walk_process_data( $self->global_keys );
     }
 
-    if ( $self->global_attr->can('sample_rule') ) {
+    #Backwards compatibility
+    #For both file_rule and sample_rule
+    if ( $self->first_index_global_keys( sub { $_ eq 'sample_rule' } ) != -1 ) {
+        $text = $self->global_attr->sample_rule;
+    }
+    elsif ( $self->first_index_global_keys( sub { $_ eq 'file_rule' } ) != -1 )
+    {
         $text = $self->global_attr->sample_rule;
     }
     else {
@@ -186,10 +192,7 @@ sub get_samples {
             if ( $whole[0] eq $attr->indir ) {
                 shift(@whole);
             }
-
-            #File find puts directory we are looking in, not just subdirs
             @basename = map { basename($_) } @whole;
-            @basename = sort(@basename);
         }
     }
     else {
@@ -199,17 +202,18 @@ sub get_samples {
             extras   => { follow => 1 },
             in       => $attr->indir
         );
-
+        @basename = @whole;
         @basename = map { $self->match_samples( $_, $text ) } @whole;
-        @basename = uniq(@basename);
-        @basename = sort(@basename);
     }
 
     my @sample_files = map { path($_)->absolute } @whole;
     @sample_files = sort(@sample_files);
 
-    #Throw error if sample don't exist
-    $self->samples( \@basename )          if @basename;
+    if (@basename) {
+        @basename = uniq(@basename);
+        @basename = sort(@basename);
+        $self->samples( \@basename );
+    }
     $self->sample_files( \@sample_files ) if @sample_files;
 
     $self->global_attr->samples( dclone( $self->samples ) );
@@ -226,7 +230,7 @@ sub get_samples {
 sub check_sample_exist {
     my $self = shift;
 
-    my $exists  = 0;
+    my $exists = 0;
     if ( $self->has_samples && !$self->resample ) {
         my (@samples) = $self->sorted_samples;
         $self->samples( \@samples );
@@ -234,7 +238,7 @@ sub check_sample_exist {
         $exists = 1;
     }
     elsif ( $self->global_attr->has_samples ) {
-        my (@samples) = @{$self->global_attr->samples};
+        my (@samples) = @{ $self->global_attr->samples };
         @samples = sort(@samples);
         $self->samples( \@samples );
         $self->app_log->info('Samples were defined in the global key.');
@@ -256,10 +260,16 @@ sub match_samples {
     my $file = shift;
     my $text = shift;
 
-    my @tmp = fileparse($_);
-    my ($m) = $tmp[0] =~ qr/$text/;
+    if ( $text =~ m/\(/ ) {
+        my @tmp = fileparse($file);
+        my ($m) = $tmp[0] =~ qr/$text/;
 
-    return $m;
+        return $m;
+    }
+    else {
+        my @tmp = fileparse($file);
+        return $tmp[0];
+    }
 }
 
 =head3 process_by_sample_outdir
