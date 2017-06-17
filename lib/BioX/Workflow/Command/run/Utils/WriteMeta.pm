@@ -90,9 +90,9 @@ sub write_workflow_meta_start {
     $self->fh->say("$self->{comment_char}");
     $self->fh->say("$self->{comment_char}");
 
-
     $self->fh->say("$self->{comment_char} Samples:");
-    $self->fh->say("$self->{comment_char} \t".join(', ', @{$self->samples}));
+    $self->fh->say(
+        "$self->{comment_char} \t" . join( ', ', @{ $self->samples } ) );
     $self->fh->say("$self->{comment_char}");
     $self->fh->say("$self->{comment_char}");
 
@@ -215,7 +215,7 @@ sub trim {
 sub write_hpc_meta {
     my $self = shift;
 
-    ##TODO Fetch Global HPC
+    ##TODO Fix this for mixed data types
 
     $self->local_attr->add_before_meta( ' ### HPC Directives' . "\n" );
     if ( ref( $self->local_attr->HPC ) eq 'HASH' ) {
@@ -224,6 +224,7 @@ sub write_hpc_meta {
     elsif ( ref( $self->local_attr->HPC ) eq 'ARRAY' ) {
         $self->write_hpc_array_meta;
     }
+
 }
 
 =head3 write_hpc_hash_meta
@@ -267,8 +268,15 @@ sub write_hpc_array_meta {
 
     my %lookup = ();
 
-    %lookup = %{$self->iter_hpc_array($self->global_attr->HPC, \%lookup)};
-    %lookup = %{$self->iter_hpc_array($self->local_attr->HPC, \%lookup)};
+    if ( ref( $self->global_attr->HPC ) eq 'ARRAY' ) {
+        %lookup =
+          %{ $self->iter_hpc_array( $self->global_attr->HPC, \%lookup ) };
+    }
+    elsif(ref($self->global_attr->HPC) eq 'HASH'){
+      %lookup = %{$self->global_attr->HPC};
+    }
+    
+    %lookup = %{ $self->iter_hpc_array( $self->local_attr->HPC, \%lookup ) };
 
     if ( !exists $lookup{jobname} ) {
         $self->local_attr->add_before_meta(
@@ -296,7 +304,7 @@ sub iter_hpc_array {
     my $aref   = shift;
     my $lookup = shift;
 
-    foreach my $href ( @{ $aref } ) {
+    foreach my $href ( @{$aref} ) {
         if ( ref($href) eq 'HASH' ) {
             my @keys = keys %{$href};
             map { $lookup->{$_} = $href->{$_} } @keys;
