@@ -167,11 +167,11 @@ sub get_samples {
 
     #Backwards compatibility
     #For both file_rule and sample_rule
-    if ( $self->first_index_global_keys( sub { $_ eq 'sample_rule' } ) != -1 ) {
+    if ( $self->first_index_global_keys( sub { $_ eq 'file_rule' } ) != -1 )
+    {
         $text = $self->global_attr->sample_rule;
     }
-    elsif ( $self->first_index_global_keys( sub { $_ eq 'file_rule' } ) != -1 )
-    {
+    elsif ( $self->first_index_global_keys( sub { $_ eq 'sample_rule' } ) != -1 ) {
         $text = $self->global_attr->sample_rule;
     }
     else {
@@ -234,6 +234,8 @@ sub check_sample_exist {
     if ( $self->has_samples && !$self->resample ) {
         my (@samples) = $self->sorted_samples;
         $self->samples( \@samples );
+        ## Fixes Issue #19
+        $self->global_attr->samples(\@samples);
         $self->app_log->info('Samples passed in on command line.');
         $exists = 1;
     }
