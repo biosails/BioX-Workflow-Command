@@ -696,8 +696,11 @@ sub walk_indir_outdir_sample {
     my $attr = shift;
     my $text = shift;
 
+    $DB::single = 2;
     my $use_iters    = $self->use_iterables;
     my $dummy_sample = $self->dummy_sample;
+
+    my @samples = @{$attr->samples} if $attr->has_samples;
 
     foreach my $sample ( $attr->all_samples ) {
         my $new_text = $text;
