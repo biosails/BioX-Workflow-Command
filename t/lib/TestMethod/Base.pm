@@ -33,8 +33,14 @@ sub make_test_dir {
 sub make_test_env {
     my $self = shift;
     my $workflow = shift;
+    my $args = shift || [];
 
-    MooseX::App::ParsedArgv->new( argv => [ "run", "--workflow", $workflow ] );
+    my $init_args = [ "run", "--workflow", $workflow ];
+    if($args && ref($args) eq 'ARRAY'){
+      map { push (@{$init_args}, $_) } @{$args};
+    }
+
+    MooseX::App::ParsedArgv->new( argv => $init_args );
 
     my $test = BioX::Workflow::Command->new_with_command();
 
