@@ -20,9 +20,8 @@ extends 'TestMethod::Base';
 =head1 Purpose
 
 This tests references -
-https://github.com/biosails/BioX-Workflow-Command/issues/12 The special HPC var
-supports arrays and hashes, but it wasn't properly dealt with when they were
-mixed and matched
+https://github.com/biosails/BioX-Workflow-Command/issues/19 Refactoring the
+'check_sample_exists' function didn't add the samples to the global samples attr
 
 =cut
 
@@ -37,24 +36,22 @@ sub write_test_file {
             { root_dir          => 'data/analysis' },
             { indir             => 'data/raw' },
             { outdir            => 'data/processed' },
-            {jellyfish_dir => 'data/JELLYFISH/{$sample}/jellyfish'},
+            { jellyfish_dir     => 'data/analysis/{$sample}/jellyfish' },
             { find_sample_bydir => 1 },
             { by_sample_outdir  => 1 },
-            { HPC  => [{account => 'gencore'}] },
+            { HPC               => [ { account => 'gencore' } ] },
         ],
         rules => [
             {
                 pre_assembly_jellyfish_count => {
                     'local' => [
                         { root_dir => 'data/raw' },
-                        { outdir => '{$self->jellyfish_dir}' },
-                        # { outdir => 'data/THING' },
+                        { outdir   => '{$self->jellyfish_dir}' },
                         {
-                            INPUT =>
-'{$self->jellyfish_dir}/some_input_rule1'
+                            INPUT => '{$self->jellyfish_dir}/some_input_rule1'
                         },
-                        { OUTPUT =>  '{$self->jellyfish_dir}/some_input_rule1' },
-                        { HPC => [{'deps' => 'some_dep'}]}
+                        { OUTPUT => '{$self->jellyfish_dir}/some_input_rule1' },
+                        { HPC    => [ { 'deps' => 'some_dep' } ] }
                     ],
                     process =>
 'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT}',
@@ -77,10 +74,11 @@ sub write_test_file {
 sub construct_tests {
     my $test_methods = TestMethod::Base->new();
     my $test_dir     = $test_methods->make_test_dir();
+
     write_test_file($test_dir);
 
-    my $t     = "$test_dir/conf/test1.1.yml";
-    my $test  = $test_methods->make_test_env($t);
+    my $t = "$test_dir/conf/test1.1.yml";
+    my $test = $test_methods->make_test_env( $t, [ '--samples', 'Sample_01' ] );
     my $rules = $test->workflow_data->{rules};
 
     return ( $test, $test_dir, $rules );
@@ -97,12 +95,12 @@ sub test_001 {
     }
 
     $test->post_process_rules;
-    is_deeply($test->samples, ['Sample_01']);
+    is_deeply( $test->samples, ['Sample_01'] );
 
-    diag(Dumper(system("tree data")));
+    ok((-d 'data/analysis/Sample_01/jellyfish'));
+
     ok(1);
 }
-
 
 sub _init_rule {
     my $test = shift;
