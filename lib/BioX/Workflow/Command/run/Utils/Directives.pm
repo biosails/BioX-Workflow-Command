@@ -81,6 +81,20 @@ has 'INPUT' => (
     documentation => q(See OUTPUT)
 );
 
+=head3 sample_rule
+
+Rule to find files/samples
+
+=cut
+
+has 'sample_rule' => (
+    is        => 'rw',
+    isa       => 'Str',
+    default   => sub { return "(.*)"; },
+    clearer   => 'clear_sample_rule',
+    predicate => 'has_sample_rule',
+);
+
 =head2 find_sample_bydir
 
 #Previous find_by_dir

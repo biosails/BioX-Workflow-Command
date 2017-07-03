@@ -189,8 +189,8 @@ has 'global_keys' => (
     isa     => 'ArrayRef',
     default => sub { return [] },
     handles => {
-        all_global_keys => 'elements',
-        has_global_keys => 'count',
+        all_global_keys         => 'elements',
+        has_global_keys         => 'count',
         first_index_global_keys => 'first_index',
     },
 );
@@ -608,6 +608,7 @@ sub in_template_process {
     $self->local_attr->sample($sample);
     $self->sample($sample);
     my $text = $self->eval_process();
+
     # my $log  = $self->write_file_log();
     # $text .= $log;
     push( @{$texts}, $text ) if $self->print_within_rule;
@@ -696,20 +697,17 @@ sub walk_indir_outdir_sample {
     my $attr = shift;
     my $text = shift;
 
-    $DB::single = 2;
     my $use_iters    = $self->use_iterables;
     my $dummy_sample = $self->dummy_sample;
 
-    my @samples = @{$attr->samples} if $attr->has_samples;
+    my @samples = @{ $attr->samples } if $attr->has_samples;
 
     foreach my $sample ( $attr->all_samples ) {
         my $new_text = $text;
         $new_text =~ s/$dummy_sample/$sample/g;
-        $DB::single = 2;
 
         if ($use_iters) {
-            $self->walk_indir_outdir_iters(  $use_iters, $attr,
-                $new_text );
+            $self->walk_indir_outdir_iters( $use_iters, $attr, $new_text );
         }
         else {
             $new_text = path($new_text)->absolute if $attr->coerce_abs_dir;
@@ -857,15 +855,18 @@ sub check_indir_outdir {
     my $self = shift;
     my $attr = shift;
 
+    $DB::single = 2;
     return unless $attr->by_sample_outdir;
     return unless $self->has_sample;
     return if $attr->override_process;
 
     # If indir/outdir is specified in the local config
     # then we don't evaluate it
+    my %keys = ();
+    map { $keys{$_} = 1 } @{ $self->local_rule_keys };
 
     foreach my $dir ( ( 'indir', 'outdir' ) ) {
-        if ( grep /$dir/, @{ $self->local_rule_keys } ) {
+        if ( exists $keys{$dir} ) {
             next;
         }
 
@@ -901,6 +902,7 @@ Outdir should be global_attr->outdir/rule_name
 sub carry_directives {
     my $self = shift;
 
+    $DB::single = 2;
     $self->local_attr->outdir(
         $self->global_attr->outdir . '/' . $self->rule_name );
 
