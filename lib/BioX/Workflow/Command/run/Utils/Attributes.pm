@@ -66,19 +66,6 @@ has 'cached_workflow' => (
 
 =cut
 
-=head3 sample_rule
-
-Rule to find files/samples
-
-=cut
-
-has 'sample_rule' => (
-    is        => 'rw',
-    isa       => 'Str',
-    default   => sub { return "(.*)"; },
-    clearer   => 'clear_sample_rule',
-    predicate => 'has_sample_rule',
-);
 
 =head3 local_rule1
 
