@@ -59,27 +59,6 @@ sub post_process_rules {
     #Create flags for outputs that have a similar input
     $self->app_log->info();
 
-    # $self->app_log->info( 'Selected rules:' . "\t"
-    #       . join( ', ', @{ $self->select_rule_keys } )
-    #       . "\n" )
-    #   if $self->use_timestamps;
-    # $self->app_log->info( 'Looking for orphan INPUTs '
-    #       . '(INPUTs with no corresponding OUTPUTs)' );
-
-# my $rule_count = 0;
-# foreach my $rule ( $self->all_select_rule_keys ) {
-#     ##Skip the first rule
-#     if ( $rule_count == 0 ) {
-#         $rule_count++;
-#         next;
-#     }
-#     $self->check_input_output($rule);
-# }
-#
-#
-# $self->app_log->warn( "Found Orphan Inputs (inputs with no corresponding outputs)\n" . $self->orphan_table )
-#   if $self->orphan_inputs;
-
     $self->dedeps;
     $self->process_auto_deps;
 
@@ -100,8 +79,8 @@ sub print_process_workflow {
         my $text = $self->process_obj->{$rule}->{text} || [];
 
         map { $self->fh->say($_) } @{$meta};
-        $self->fh->say("");
-        map { $self->fh->say($_) } @{$text};
+        $self->fh->say('');
+        map { $self->fh->say($_); $self->fh->say('') } @{$text};
 
         $self->print_stats_rules($rule);
 

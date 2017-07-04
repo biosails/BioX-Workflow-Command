@@ -17,7 +17,7 @@ sub test_001 : Tags(req) {
     require_ok('BioX::Workflow::Command::add');
 
     require_ok('BioX::Workflow::Command::run::Utils::Attributes');
-    require_ok('BioX::Workflow::Command::run::Utils::Directives');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives');
     require_ok('BioX::Workflow::Command::run::Utils::Rules');
     require_ok('BioX::Workflow::Command::run::Utils::Samples');
     require_ok('BioX::Workflow::Command::run::Utils::WriteMeta');

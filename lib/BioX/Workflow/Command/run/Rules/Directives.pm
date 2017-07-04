@@ -1,6 +1,9 @@
-package BioX::Workflow::Command::run::Utils::Directives;
+package BioX::Workflow::Command::run::Rules::Directives;
 
 use Moose;
+use namespace::autoclean;
+
+with 'BioX::Workflow::Command::run::Rules::Directives::Types::HPC';
 
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
@@ -14,17 +17,9 @@ use Scalar::Util 'blessed';
 use Try::Tiny;
 use Safe;
 use Storable qw(dclone);
-
 # use File::Basename;
 use File::Spec;
-
-use Moose::Util::TypeConstraints;
-class_type 'Path';
-class_type 'Paths';
-
 use Memoize;
-
-use namespace::autoclean;
 
 our $c = new Safe;
 
@@ -443,6 +438,7 @@ sub create_attr {
                 elsif($self->can($k)){
                   next;
                 }
+                ##TODO Clean this up for Types
                 elsif ( $k =~ m/_list/ ) {
                     $self->create_ITERABLE_attr( $meta, $k );
                 }
@@ -661,6 +657,7 @@ sub my_broken {
 EOF
 }
 
+##TODO Register Types
 sub walk_process_data {
     my $self = shift;
     my $keys = shift;
@@ -777,5 +774,6 @@ after 'BUILD' => sub {
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
+
 
 1;

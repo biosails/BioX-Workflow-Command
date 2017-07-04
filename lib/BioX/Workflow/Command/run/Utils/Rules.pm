@@ -505,21 +505,28 @@ sub template_process {
     #Instead save it as an object
     #And process the object at the end to account for --auto_deps
 
+    ##TODO Add back in override_process
+
     # $self->local_attr->{_modified} = 0;
     $self->process_obj->{ $self->rule_name } = {};
 
     my $dummy_sample = $self->dummy_sample;
     my $dummy_texts = $self->check_iterables( $dummy_sample, [] );
 
-    foreach my $sample ( $self->all_samples ) {
-        foreach my $text ( @{$dummy_texts} ) {
-            my $new_text = $text;
-            $new_text =~ s/$dummy_sample/$sample/g;
-            push( @$texts, $new_text );
-        }
-    }
+    if ( !$self->local_attr->override_process ) {
 
-    $self->process_obj->{ $self->rule_name }->{text} = $texts;
+        foreach my $sample ( $self->all_samples ) {
+            foreach my $text ( @{$dummy_texts} ) {
+                my $new_text = $text;
+                $new_text =~ s/$dummy_sample/$sample/g;
+                push( @$texts, $new_text );
+            }
+        }
+        $self->process_obj->{ $self->rule_name }->{text} = $texts;
+    }
+    else {
+        $self->process_obj->{ $self->rule_name }->{text} = $dummy_texts;
+    }
 
     $self->process_obj->{ $self->rule_name }->{meta} =
       $self->write_rule_meta('before_meta');
@@ -795,13 +802,6 @@ sub print_rule {
     my $select_index = $self->check_select('select');
     my $omit_index   = $self->check_select('omit');
 
-# if ( $self->use_timestamps && !$self->select_effect && !$self->omit_effect )
-#     {
-#         $self->app_log->info(
-# 'Use timestamps in effect. Files have been modified or not logged by biox-workflow.'
-#         );
-#     }
-
     if ( !$select_index ) {
         $self->app_log->info(
             'Select rules in place. Skipping rule ' . $self->rule_name );
@@ -828,15 +828,6 @@ sub print_within_rule {
     #TODO May not need this without use_timestamps
     my $select_index = $self->check_select('select');
 
-    # if ( $self->use_timestamps ) {
-    #
-    #     my $print_rule = 0;
-    #     $print_rule = 1 if $self->local_attr->{_modified};
-    #     if ( !$select_index && $print_rule ) {
-    #         $self->add_select_rule_key( $self->rule_name );
-    #     }
-    #     return $print_rule;
-    # }
     return 1;
 }
 
@@ -951,4 +942,5 @@ EOF
     );
     $self->app_log->fatal($rule_example);
 }
+
 1;

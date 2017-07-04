@@ -13,7 +13,7 @@ use List::MoreUtils qw(uniq);
 extends qw(  BioX::Workflow::Command );
 
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
-use BioX::Workflow::Command::run::Utils::Directives;
+use BioX::Workflow::Command::run::Rules::Directives;
 
 with 'BioX::Workflow::Command::Utils::Log';
 with 'BioX::Workflow::Command::run::Utils::Samples';
