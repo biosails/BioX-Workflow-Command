@@ -11,28 +11,6 @@ use DateTime::Format::Strptime;
 
 with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
 
-# option 'make' => (
-#     is            => 'rw',
-#     isa           => 'Bool',
-#     default       => 0,
-#     documentation => 'Sets --use_timestamps and --autodeps to True.',
-#     trigger       => sub {
-#         my $self = shift;
-#         if ( $self->make ) {
-#             $self->use_timestamps(1);
-#             $self->auto_deps(1);
-#         }
-#     },
-# );
-#
-# option 'use_timestamps' => (
-#     is      => 'rw',
-#     isa     => 'Bool',
-#     default => 0,
-#     documentation =>
-# 'Automatically select a rule if any of the INPUTs of that rule have changed.'
-# );
-
 =head3 files
 
 Files just for this rule

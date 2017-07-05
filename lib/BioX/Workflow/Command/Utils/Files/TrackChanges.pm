@@ -1,8 +1,8 @@
 package BioX::Workflow::Command::Utils::Files::TrackChanges;
 
 use Moose::Role;
-use DBM::Deep;
-use File::Spec;
+# use DBM::Deep;
+# use File::Spec;
 
 #TODO most of these should be in run
 
