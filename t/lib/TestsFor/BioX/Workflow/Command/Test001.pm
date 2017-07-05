@@ -17,12 +17,21 @@ sub test_001 : Tags(req) {
     require_ok('BioX::Workflow::Command::add');
 
     require_ok('BioX::Workflow::Command::run::Utils::Attributes');
-    require_ok('BioX::Workflow::Command::run::Utils::Directives');
-    require_ok('BioX::Workflow::Command::run::Utils::Rules');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives');
     require_ok('BioX::Workflow::Command::run::Utils::Samples');
     require_ok('BioX::Workflow::Command::run::Utils::WriteMeta');
     require_ok('BioX::Workflow::Command::run::Utils::Files::ResolveDeps');
     require_ok('BioX::Workflow::Command::run::Utils::Files::TrackChanges');
+
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::Hash');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::List');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::Array');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::HPC');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::Path');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::Config');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::CSV');
+    require_ok('BioX::Workflow::Command::run::Rules::Directives::Types::Roles::File');
+    require_ok('BioX::Workflow::Command::run::Rules::Rules');
 
     require_ok('BioX::Workflow::Command::Utils::Create');
     require_ok('BioX::Workflow::Command::Utils::Files');

@@ -7,11 +7,11 @@ use File::Copy;
 
 extends 'BioX::Workflow::Command';
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
-use BioX::Workflow::Command::run::Utils::Directives;
+use BioX::Workflow::Command::run::Rules::Directives;
 
 with 'BioX::Workflow::Command::run::Utils::Samples';
 with 'BioX::Workflow::Command::run::Utils::Attributes';
-with 'BioX::Workflow::Command::run::Utils::Rules';
+with 'BioX::Workflow::Command::run::Rules::Rules';
 with 'BioX::Workflow::Command::run::Utils::WriteMeta';
 with 'BioX::Workflow::Command::run::Utils::Files::TrackChanges';
 with 'BioX::Workflow::Command::run::Utils::Files::ResolveDeps';

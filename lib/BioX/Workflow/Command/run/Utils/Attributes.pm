@@ -87,7 +87,7 @@ Attributes defined in the global key of the config
 
 has 'global_attr' => (
     is       => 'rw',
-    isa      => 'BioX::Workflow::Command::run::Utils::Directives',
+    isa      => 'BioX::Workflow::Command::run::Rules::Directives',
     required => 0,
 );
 
@@ -99,13 +99,13 @@ Attributes in the local key of the rule
 
 has 'local_attr' => (
     is       => 'rw',
-    isa      => 'BioX::Workflow::Command::run::Utils::Directives',
+    isa      => 'BioX::Workflow::Command::run::Rules::Directives',
     required => 0,
 );
 
 has 'p_local_attr' => (
     is       => 'rw',
-    isa      => 'BioX::Workflow::Command::run::Utils::Directives',
+    isa      => 'BioX::Workflow::Command::run::Rules::Directives',
     required => 0,
 );
 
@@ -195,7 +195,7 @@ sub apply_local_attr {
 sub apply_global_attributes {
     my $self = shift;
 
-    my $global_attr = BioX::Workflow::Command::run::Utils::Directives->new();
+    my $global_attr = BioX::Workflow::Command::run::Rules::Directives->new();
 
     $self->global_attr($global_attr);
 
