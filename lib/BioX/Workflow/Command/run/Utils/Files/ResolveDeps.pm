@@ -44,8 +44,7 @@ sub add_graph {
     my $self = shift;
     my $cond = shift;
 
-    for my $pair ( $self->files_pairs ) {
-        my $file = $pair->[0];
+    for my $file ( $self->all_files ) {
         if ( !exists $self->rule_deps->{ $self->rule_name }->{$cond}->{$file} )
         {
             $self->rule_deps->{ $self->rule_name }->{$cond}->{$file} = 1;
