@@ -84,21 +84,18 @@ Full documentation is available at gitbooks. L<Documentation | https://biosails.
 
 =head2 Run a Workflow with make like utilities
 
-Using the option --use_timestamps will select only rules that have INPUT/OUTPUT that does not exist or has been modified since the last log.
 
-  biox run --workflow workflow.yml --use_timestamps
-
-Using the option --auto_deps will create #HPC deps based on your INPUT/OUTPUTs - use this with caution. It will only work correctly if INPUT/OUTPUT is complete and accurate.
+Using the option --auto_deps will create #HPC deps based on your INPUT/OUTPUTs -
+use this with caution. It will only work correctly if INPUT/OUTPUT is complete
+and accurate.
 
   biox run --workflow workflow.yml --auto_deps
 
-Option --make enables both --use_timestamps and --auto_deps
-
-  biox run --workflow workflow.yml --make
 
 =head2 Create a new workflow
 
-This creates a new workflow with rules rule1, rule2, rule3, with a few variables to help get you started.
+This creates a new workflow with rules rule1, rule2, rule3, with a few variables
+to help get you started.
 
   biox new -w workflow.yml --rules rule1,rule2,rule3
 
@@ -110,7 +107,8 @@ Add new rules to an existing workflow.
 
 =head2 Check the status of files in your workflow
 
-You must have defined INPUT/OUTPUTs to make use of this rule. If you do, biox will output a table with information about your files.
+You must have defined INPUT/OUTPUTs to make use of this rule. If you do, biox
+will output a table with information about your files.
 
   biox stats -w workflow.yml
 
