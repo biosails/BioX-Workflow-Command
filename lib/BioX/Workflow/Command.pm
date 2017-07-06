@@ -64,7 +64,8 @@ BioX::Workflow::Command - Opinionated Bioinformatics Genomics Workflow Creator
 
 =head1 documentation
 
-Full documentation is available at gitbooks. L<Documentation | https://biosails.gitbooks.io/biox-workflow-command-docs/content/>
+Full documentation is available at gitbooks. L<Documentation |
+https://biosails.gitbooks.io/biox-workflow-command-docs/content/>
 
 =head1 Quick Start
 
