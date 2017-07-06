@@ -44,6 +44,9 @@ sub add_graph {
     my $self = shift;
     my $cond = shift;
 
+    return unless $self->files;
+    return unless $self->has_files;
+
     for my $file ( $self->all_files ) {
         if ( !exists $self->rule_deps->{ $self->rule_name }->{$cond}->{$file} )
         {

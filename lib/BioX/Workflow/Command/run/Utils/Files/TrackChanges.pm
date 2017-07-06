@@ -17,17 +17,6 @@ Files just for this rule
 ##TODO Make this a hash?
 =cut
 
-# has 'files' => (
-#     traits  => ['Hash'],
-#     is      => 'rw',
-#     isa     => 'HashRef',
-#     default => sub { {} },
-#     handles => {
-#         files_pairs => 'kv',
-#         clear_files => 'clear',
-#     },
-# );
-
 has 'files' => (
     traits  => ['Array'],
     is      => 'rw',
@@ -87,7 +76,9 @@ sub walk_INPUT {
     return unless $ref_name;
     return unless $ref_name eq 'Path::Tiny';
 
-    $self->push_files( $ref->absolute );
+    my $file = $ref->absolute;
+    $file = "$file";
+    $self->push_files( $file );
 }
 
 1;

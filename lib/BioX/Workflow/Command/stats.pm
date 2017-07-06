@@ -47,27 +47,24 @@ has 'app_log_file' => (
         return $log_file;
     }
 );
-
-has '+app_log' => (
+has 'app_log' => (
+    is      => 'rw',
     default => sub {
-        my $self         = shift;
-        my $app_log_file = $self->app_log_file;
-        my $log_conf     = <<EOF;
-  log4perl.category = DEBUG, LOGFILE
-  log4perl.appender.LOGFILE=Log::Log4perl::Appender::File
-  log4perl.appender.LOGFILE.filename=$app_log_file
-EOF
-
-        $log_conf .= <<'EOF';
-  log4perl.appender.LOGFILE.mode=append
-  log4perl.appender.LOGFILE.layout=PatternLayout
-  log4perl.appender.LOGFILE.layout.ConversionPattern=[%d] %m %n
-EOF
-
-        Log::Log4perl->init( \$log_conf );
+        my $self = shift;
+        Log::Log4perl->init( \ <<'EOT');
+  log4perl.category = FATAL, Screen
+  log4perl.appender.Screen = \
+      Log::Log4perl::Appender::ScreenColoredLevels
+  log4perl.appender.Screen.layout = \
+      Log::Log4perl::Layout::PatternLayout
+  log4perl.appender.Screen.layout.ConversionPattern = \
+      [%d] %m %n
+EOT
         return get_logger();
     },
+    lazy => 1,
 );
+
 
 has 'table_log' => (
     is      => 'rw',
@@ -119,6 +116,11 @@ around 'pre_FILES' => sub {
     return if $index == -1;
 
     $self->$orig( $attr, $cond );
+
+    return unless $self->has_files;
+    return unless $self->files;
+
+    $DB::single=2;
 
     for my $file ( $self->all_files ) {
         $self->preprocess_row( $file, $cond );
