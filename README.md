@@ -28,17 +28,9 @@ Full documentation is available at gitbooks. [Documentation ](https://metacpan.o
 
 ## Run a Workflow with make like utilities
 
-Using the option --use\_timestamps will select only rules that have INPUT/OUTPUT that does not exist or has been modified since the last log.
-
-    biox run --workflow workflow.yml --use_timestamps
-
 Using the option --auto\_deps will create #HPC deps based on your INPUT/OUTPUTs - use this with caution. It will only work correctly if INPUT/OUTPUT is complete and accurate.
 
     biox run --workflow workflow.yml --auto_deps
-
-Option --make enables both --use\_timestamps and --auto\_deps
-
-    biox run --workflow workflow.yml --make
 
 ## Create a new workflow
 

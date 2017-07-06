@@ -29,9 +29,7 @@ command_short_description 'Get the status of INPUT/OUTPUT for your workflow';
 command_long_description
   'If you are unsure on where you are in your workflow, run this step. '
   . 'It will give you a breakdown of rules with associated files, '
-  . 'and whether or not they have been created or modified. '
-  . 'Automatically select rules with unprocessed or changed files by using '
-  . '--use_timestamps in your next run.';
+  . 'and whether or not they have been created or modified. ';
 
 has 'app_log_file' => (
     is      => 'rw',
