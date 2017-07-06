@@ -9,6 +9,7 @@ use Number::Bytes::Human qw(format_bytes parse_bytes);
 use File::Details;
 use File::Basename;
 use List::MoreUtils qw(uniq);
+use Try::Tiny;
 
 extends qw(  BioX::Workflow::Command );
 
@@ -138,7 +139,7 @@ sub gen_row {
     my $sample       = shift;
     my $sample_files = shift;
 
-    foreach my $file (@{$sample_files}) {
+    foreach my $file ( @{$sample_files} ) {
 
         my @trow = ();
 
@@ -147,13 +148,13 @@ sub gen_row {
         push( @trow, $cond );
 
         my $rel = '';
-        $rel = $file ;
+        $rel = $file;
         $rel = File::Spec->abs2rel($file) if $self->use_full;
 
         my $basename = basename($file) unless $self->use_full;
 
         #Add the filename
-        push( @trow, $rel ) if $self->use_full;
+        push( @trow, $rel )      if $self->use_full;
         push( @trow, $basename ) if !$self->use_full;
 
         #Does the file exist?
@@ -220,7 +221,9 @@ sub iter_file_chunks {
 
 after 'template_process' => sub {
     my $self = shift;
-    $self->table_log->addRowLine();
+    try {
+        $self->table_log->addRowLine();
+    }
 };
 
 around 'print_process_workflow' => sub {
