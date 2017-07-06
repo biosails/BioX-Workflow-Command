@@ -695,7 +695,7 @@ sub walk_indir_outdir {
 
     my $text = $attr->interpol_directive( $attr->outdir );
 
-    $DB::single = 2;
+    # $DB::single = 2;
     $self->walk_indir_outdir_sample( $attr, $text );
 }
 
@@ -846,7 +846,7 @@ sub check_indir_outdir {
     my $self = shift;
     my $attr = shift;
 
-    $DB::single = 2;
+    # $DB::single = 2;
     return unless $attr->by_sample_outdir;
     return unless $self->has_sample;
     return if $attr->override_process;
@@ -893,7 +893,7 @@ Outdir should be global_attr->outdir/rule_name
 sub carry_directives {
     my $self = shift;
 
-    $DB::single = 2;
+    # $DB::single = 2;
     $self->local_attr->outdir(
         $self->global_attr->outdir . '/' . $self->rule_name );
 
