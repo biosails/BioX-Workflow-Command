@@ -3,6 +3,7 @@ package BioX::Workflow::Command::run::Utils::Samples;
 use MooseX::App::Role;
 
 with 'BioX::Workflow::Command::run::Rules::Directives::Sample';
+with 'BioX::Workflow::Command::run::Rules::Rules';
 
 use File::Find::Rule;
 use File::Basename;
