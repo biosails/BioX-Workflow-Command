@@ -150,13 +150,13 @@ sub gen_row {
 
         my $rel = '';
         $rel = $file;
-        $rel = path($file)->absolute if $self->use_full;
+        $rel = path($file)->absolute if $self->use_abs;
 
-        my $basename = basename($file) unless $self->use_full;
+        my $basename = basename($file) unless $self->use_abs;
 
         #Add the filename
-        push( @trow, $rel )      if $self->use_full;
-        push( @trow, $basename ) if !$self->use_full;
+        push( @trow, $rel )      if $self->use_abs;
+        push( @trow, $basename ) if !$self->use_abs;
 
         #Does the file exist?
         if ( -e $file ) {

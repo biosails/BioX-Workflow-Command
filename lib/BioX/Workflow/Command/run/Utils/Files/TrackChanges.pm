@@ -50,10 +50,12 @@ sub walk_FILES {
     $self->pre_FILES( $attr, 'INPUT' );
     $self->add_graph('INPUT');
     $self->clear_files;
+    $self->files([]);
 
     $self->pre_FILES( $attr, 'OUTPUT' );
     $self->add_graph('OUTPUT');
     $self->clear_files;
+    $self->files([]);
 }
 
 sub pre_FILES {
