@@ -10,6 +10,7 @@ use File::Details;
 use File::Basename;
 use List::MoreUtils qw(uniq);
 use Try::Tiny;
+use Path::Tiny;
 
 extends qw(  BioX::Workflow::Command );
 
@@ -78,11 +79,11 @@ has 'table_log' => (
     }
 );
 
-option 'use_full' => (
+option 'use_abs' => (
     is            => 'rw',
     isa           => 'Bool',
     default       => 0,
-    documentation => 'Use the full path name instead of the basename'
+    documentation => 'Use the absolute path name instead of the basename'
 );
 
 our $human = Number::Bytes::Human->new(
@@ -119,8 +120,8 @@ around 'pre_FILES' => sub {
 
     $self->$orig( $attr, $cond );
 
-    for my $pair ( $self->files_pairs ) {
-        $self->preprocess_row( $pair->[0], $cond );
+    for my $file ( $self->all_files ) {
+        $self->preprocess_row( $file, $cond );
     }
 };
 
@@ -149,7 +150,7 @@ sub gen_row {
 
         my $rel = '';
         $rel = $file;
-        $rel = File::Spec->abs2rel($file) if $self->use_full;
+        $rel = path($file)->absolute if $self->use_full;
 
         my $basename = basename($file) unless $self->use_full;
 

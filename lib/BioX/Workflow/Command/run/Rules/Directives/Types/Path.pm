@@ -38,6 +38,17 @@ has 'outdir' => (
     documentation => q(Output directories for rules and processes),
 );
 
+has 'cwd' => (
+    is            => 'rw',
+    isa           => Path,
+    coerce        => 1,
+    required      => 0,
+    default       => sub { cwd(); },
+    predicate     => 'has_cwd',
+    clearer       => 'clear_cwd',
+    documentation => q(Placeholder for the cwd.),
+);
+
 =head3 INPUT OUTPUT
 
 Special variables that can have input/output
