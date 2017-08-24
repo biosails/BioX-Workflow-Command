@@ -3,10 +3,7 @@ package BioX::Workflow::Command::run;
 use v5.10;
 use MooseX::App::Command;
 
-# use File::Copy;
 use File::Path qw(make_path);
-use File::Slurp;
-use YAML;
 
 extends 'BioX::Workflow::Command';
 use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
@@ -28,7 +25,8 @@ command_long_description
 
 =head1 BioX::Workflow::Command::run
 
-This is the main class of the `biox-workflow.pl run` command.
+  biox run -h
+  biox run -w variant_calling.yml
 
 =cut
 
@@ -48,13 +46,7 @@ sub execute {
         return;
     }
 
-    my $command_line_opts = $self->print_cmd_line_opts;
-    my $config_data = $self->print_config_data;
-    $self->print_opts($command_line_opts, $config_data);
-
-    write_file($self->cached_workflow, $command_line_opts);
-    write_file($self->cached_workflow, {append => 1}, $config_data);
-    write_file($self->cached_workflow, {append => 1}, Dump($self->workflow_data));
+    $self->print_opts;
 
     $self->app_log->info("Your cached workflow is available at\n\t".$self->cached_workflow."\n");
     $self->apply_global_attributes;

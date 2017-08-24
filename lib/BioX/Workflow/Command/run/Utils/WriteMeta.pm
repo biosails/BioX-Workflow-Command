@@ -1,7 +1,10 @@
 package BioX::Workflow::Command::run::Utils::WriteMeta;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use YAML;
+use File::Slurp;
 
 =head1 BioX::Workflow::Command::run::Utils::WriteMeta;
 
@@ -41,17 +44,32 @@ option 'verbose' => (
 
 =cut
 
+=head3 print_opts
+
+Get the command line opts and config data - print those to cached workflow and
+our workflow file.
+
+=cut
+
 sub print_opts {
     my $self = shift;
-    my $cmd_opts = shift;
-    my $config_data = shift;
+
+    my $cmd_opts    = $self->print_cmd_line_opts;
+    my $config_data = $self->print_config_data;
+
+    write_file( $self->cached_workflow, $cmd_opts );
+    write_file( $self->cached_workflow, { append => 1 }, $config_data );
+    write_file(
+        $self->cached_workflow,
+        { append => 1 },
+        Dump( $self->workflow_data )
+    );
 
     my $now = DateTime->now();
     $self->fh->say("#!/usr/bin/env bash\n\n");
 
     $self->fh->print($cmd_opts);
     $self->fh->say($config_data);
-
 }
 
 =head3 write_workflow_meta
@@ -259,8 +277,8 @@ sub write_hpc_array_meta {
         %lookup =
           %{ $self->iter_hpc_array( $self->global_attr->HPC, \%lookup ) };
     }
-    elsif(ref($self->global_attr->HPC) eq 'HASH'){
-      %lookup = %{$self->global_attr->HPC};
+    elsif ( ref( $self->global_attr->HPC ) eq 'HASH' ) {
+        %lookup = %{ $self->global_attr->HPC };
     }
 
     %lookup = %{ $self->iter_hpc_array( $self->local_attr->HPC, \%lookup ) };
