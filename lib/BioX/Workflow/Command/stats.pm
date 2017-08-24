@@ -25,7 +25,7 @@ with 'BioX::Workflow::Command::run::Utils::WriteMeta';
 with 'BioX::Workflow::Command::run::Utils::Files::TrackChanges';
 with 'BioX::Workflow::Command::run::Utils::Files::ResolveDeps';
 with 'BioX::Workflow::Command::Utils::Files';
-with 'BioX::Workflow::Command::Utils::Plugin';
+# with 'BioX::Workflow::Command::Utils::Plugin';
 
 command_short_description 'Get the status of INPUT/OUTPUT for your workflow';
 command_long_description
@@ -33,20 +33,6 @@ command_long_description
   . 'It will give you a breakdown of rules with associated files, '
   . 'and whether or not they have been created or modified. ';
 
-has 'app_log_file' => (
-    is      => 'rw',
-    isa     => 'Str',
-    lazy    => 1,
-    default => sub {
-        my $self      = shift;
-        my $dt        = DateTime->now( time_zone => 'local' );
-        my $file_name = 'stats_' . $dt->ymd . '_' . $dt->time('-') . '.log';
-
-        my $log_file =
-          File::Spec->catdir( $self->cache_dir, 'logs', $file_name );
-        return $log_file;
-    }
-);
 has 'app_log' => (
     is      => 'rw',
     default => sub {
@@ -224,6 +210,7 @@ sub iter_file_chunks {
 
 after 'template_process' => sub {
     my $self = shift;
+
     try {
         $self->table_log->addRowLine();
     }

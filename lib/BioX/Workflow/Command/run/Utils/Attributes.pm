@@ -57,7 +57,7 @@ has 'cached_workflow' => (
         my $ymd = $now->ymd;
         my $hms = $now->hms;
         $hms =~ s/:/-/g;
-        return File::Spec->catdir( $self->cache_dir, 'workflows',
+        return File::Spec->catdir( $self->cache_dir, '.biox-cache', 'workflows',
             $file . "_$ymd" . "_$hms" . $ext );
     }
 );

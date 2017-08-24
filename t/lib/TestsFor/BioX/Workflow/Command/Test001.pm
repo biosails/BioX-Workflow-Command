@@ -36,11 +36,11 @@ sub test_001 : Tags(req) {
     require_ok('BioX::Workflow::Command::Utils::Create');
     require_ok('BioX::Workflow::Command::Utils::Files');
     require_ok('BioX::Workflow::Command::Utils::Log');
-    require_ok('BioX::Workflow::Command::Utils::Plugin');
-    require_ok('BioX::Workflow::Command::Utils::Traits');
+    # require_ok('BioX::Workflow::Command::Utils::Plugin');
+    # require_ok('BioX::Workflow::Command::Utils::Traits');
 
     ##DEPRACATED
-    require_ok('BioX::Workflow::Command::Utils::Files::TrackChanges');
+    # require_ok('BioX::Workflow::Command::Utils::Files::TrackChanges');
 }
 
 1;

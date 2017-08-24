@@ -1,3 +1,0 @@
-env:
-  PATH: "/home/jillian/Dropbox/projects/BioX-Workflow-Libs/New/BioX-Workflow-Command/script:/home/jillian/.local/easybuild/software/perl-biox-workflow/1:/home/jillian/.local/easybuild/software/perl-biox-workflow/1/bin:/home/jillian/.tmuxifier/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:/home/jillian/.local/bin:/home/jillian/bin"
-  PERL5LIB: "/home/jillian/Dropbox/projects/BioX-Workflow-Libs/New/BioX-Workflow-Command/lib" 
