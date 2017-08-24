@@ -23,9 +23,9 @@ sub make_test_dir {
 
     remove_tree($test_dir);
     make_path($test_dir);
-    make_path( File::Spec->catdir($test_dir , 'data', 'raw') );
-    make_path( File::Spec->catdir($test_dir , 'data', 'analysis') );
-    make_path( File::Spec->catdir($test_dir , 'conf') );
+    make_path( File::Spec->catdir( $test_dir, 'data', 'raw' ) );
+    make_path( File::Spec->catdir( $test_dir, 'data', 'analysis' ) );
+    make_path( File::Spec->catdir( $test_dir, 'conf' ) );
 
     chdir($test_dir);
 
@@ -33,13 +33,13 @@ sub make_test_dir {
 }
 
 sub make_test_env {
-    my $self = shift;
+    my $self     = shift;
     my $workflow = shift;
-    my $args = shift || [];
+    my $args     = shift || [];
 
     my $init_args = [ "run", "--workflow", $workflow ];
-    if($args && ref($args) eq 'ARRAY'){
-      map { push (@{$init_args}, $_) } @{$args};
+    if ( $args && ref($args) eq 'ARRAY' ) {
+        map { push( @{$init_args}, $_ ) } @{$args};
     }
 
     MooseX::App::ParsedArgv->new( argv => $init_args );
@@ -59,7 +59,9 @@ sub make_test_env {
 
 sub test_shutdown {
 
+    my $cwd = cwd();
     chdir("$Bin");
+    remove_tree($cwd);
 }
 
 sub print_diff {
