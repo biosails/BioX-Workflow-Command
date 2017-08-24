@@ -4,13 +4,13 @@
       "Jillian Rowe <jillian.e.rowe@gmail.com>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Milla version v1.0.17, Dist::Zilla version 6.009, CPAN::Meta::Converter version 2.150001",
+   "generated_by" : "Dist::Milla version v1.0.18, Dist::Zilla version 6.010, CPAN::Meta::Converter version 2.150001",
    "license" : [
       "perl_5"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
-      "version" : 2
+      "version" : "2"
    },
    "name" : "BioX-Workflow-Command",
    "no_index" : {
@@ -31,7 +31,7 @@
       },
       "develop" : {
          "requires" : {
-            "Dist::Milla" : "v1.0.17",
+            "Dist::Milla" : "v1.0.18",
             "Test::Pod" : "1.41"
          }
       },
@@ -39,6 +39,12 @@
          "requires" : {
             "Algorithm::Dependency::Ordered" : "0",
             "Algorithm::Dependency::Source::HoA" : "0",
+            "BioSAILs::Utils::CacheUtils" : "0",
+            "BioSAILs::Utils::Files::CacheDir" : "0",
+            "BioSAILs::Utils::LoadConfigs" : "0",
+            "BioSAILs::Utils::Plugin" : "0",
+            "BioSAILs::Utils::Traits" : "0",
+            "BioX::Workflow::Command::Utils::Traits" : "0",
             "BioX::Workflow::Command::run::Utils::Rules" : "0",
             "Config::Any" : "0",
             "Cwd" : "0",
@@ -51,12 +57,13 @@
             "File::Copy" : "0",
             "File::Details" : "0",
             "File::Find::Rule" : "0",
+            "File::Glob" : "0",
             "File::Path" : "0",
+            "File::Slurp" : "0",
             "File::Spec" : "0",
             "File::stat" : "0",
-            "HPC::Runner::Command::Utils::ManyConfigs" : "0",
             "List::MoreUtils" : "0",
-            "List::Uniq" : "0",
+            "List::Util" : "0",
             "Log::Log4perl" : "0",
             "Memoize" : "0",
             "Moose" : "0",
@@ -65,9 +72,6 @@
             "MooseX::App" : "0",
             "MooseX::App::Command" : "0",
             "MooseX::App::Role" : "0",
-            "MooseX::Object::Pluggable" : "0",
-            "MooseX::Types" : "0",
-            "MooseX::Types::Moose" : "0",
             "MooseX::Types::Path::Tiny" : "0",
             "Number::Bytes::Human" : "0",
             "Path::Tiny" : "0",
@@ -82,14 +86,12 @@
             "YAML" : "0",
             "namespace::autoclean" : "0",
             "perl" : "v5.10.0",
-            "strict" : "0",
             "utf8" : "0"
          }
       },
       "test" : {
          "requires" : {
             "Capture::Tiny" : "0",
-            "File::Slurp" : "0",
             "File::Spec::Functions" : "0",
             "File::Temp" : "0",
             "FindBin" : "0",
@@ -99,7 +101,8 @@
             "Test::Class::Moose::Runner" : "0",
             "Test::More" : "0",
             "Text::Diff" : "0",
-            "YAML::XS" : "0"
+            "YAML::XS" : "0",
+            "strict" : "0"
          }
       }
    },
@@ -116,6 +119,6 @@
       }
    },
    "version" : "2.0.10",
-   "x_serialization_backend" : "Cpanel::JSON::XS version 3.0233"
+   "x_serialization_backend" : "JSON::XS version 3.03"
 }
 
