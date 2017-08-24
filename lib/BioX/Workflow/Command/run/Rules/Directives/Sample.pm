@@ -137,6 +137,23 @@ option 'samples' => (
 q{Supply samples on the command line as --samples sample1 --samples sample2, or find through sample_rule.}
 );
 
+option 'exclude_samples' => (
+    traits    => ['Array'],
+    is        => 'rw',
+    isa       => 'ArrayRef',
+    default   => sub { [] },
+    required  => 0,
+    cmd_split => qr/,/,
+    handles   => {
+        all_exclude_samples    => 'elements',
+        has_exclude_samples    => 'count',
+        has_no_exclude_samples => 'is_empty',
+        sorted_exclude_samples => 'sort',
+    },
+    documentation =>
+q{Exclude samples from analysis --exclude_samples sample1 --exclude_samples sample2}
+);
+
 has 'sample' => (
     is        => 'rw',
     isa       => 'Str',

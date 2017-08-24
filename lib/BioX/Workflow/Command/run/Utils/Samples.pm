@@ -68,7 +68,26 @@ sub get_samples {
             "Indir: " . $attr->indir . "\tSearch: " . $text . "\n" );
     }
 
+    $self->remove_excluded_samples;
     $self->write_sample_meta;
+}
+
+sub remove_excluded_samples {
+  my $self = shift;
+
+  return unless $self->has_samples;
+  return unless $self->has_exclude_samples;
+
+  my %sample_hash = ();
+  map { $sample_hash{$_} = 1 } @{$self->samples};
+
+  foreach my $sample ($self->all_exclude_samples){
+    delete $sample_hash{$sample};
+  }
+
+  my @new_samples  = keys %sample_hash;
+  @new_samples = sort(@new_samples);
+  $self->samples(\@new_samples);
 }
 
 sub find_sample_glob {

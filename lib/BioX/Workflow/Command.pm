@@ -11,7 +11,7 @@ with 'BioX::Workflow::Command::Utils::Log';
 with 'BioSAILs::Utils::Plugin';
 with 'BioSAILs::Utils::LoadConfigs';
 
-option 'config_base' => (
+option '+config_base' => (
     is      => 'rw',
     default => '.bioxworkflow',
 );

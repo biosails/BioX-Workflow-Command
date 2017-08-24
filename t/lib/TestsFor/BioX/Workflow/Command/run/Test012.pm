@@ -66,6 +66,8 @@ sub write_test_file {
         '' );
     write_file( File::Spec->catdir( $test_dir, 'data', 'raw', 'Sample_02' ),
         '' );
+    write_file( File::Spec->catdir( $test_dir, 'data', 'raw', 'Sample_03' ),
+        '' );
     write_file( File::Spec->catdir( $test_dir, 'data', 'raw', 'NOT_A_SAMPLE' ),
         '' );
 
@@ -82,7 +84,7 @@ sub construct_tests {
     write_test_file($test_dir);
 
     my $t     = File::Spec->catdir( $test_dir, 'conf', 'test1.1.yml' );
-    my $test  = $test_methods->make_test_env( $t, );
+    my $test  = $test_methods->make_test_env( $t,['--exclude_samples', 'Sample_03'] );
     my $rules = $test->workflow_data->{rules};
 
     return ( $test, $test_dir, $rules );
@@ -100,6 +102,7 @@ sub test_001 {
 
     $test->post_process_rules;
 
+    is_deeply( $test->exclude_samples, [ 'Sample_03' ] );
     is_deeply( $test->samples, [ 'Sample_01', 'Sample_02' ] );
 
     ok((-d 'data/analysis/Sample_01/jellyfish'));
