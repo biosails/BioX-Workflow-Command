@@ -642,12 +642,43 @@ sub eval_process {
 
     $self->walk_indir_outdir($attr);
 
-    my $process = $self->local_rule->{ $self->rule_name }->{process};
-    my $text    = $attr->interpol_directive($process);
+    my $text = $self->eval_rule($attr);
     $text = clean_text($text);
 
     $self->walk_FILES($attr);
     $self->clear_files;
+
+    return $text;
+}
+
+=head3 eval_rule
+
+Check to see if there is a custom method registered.
+
+Otherwise process the template as normal.
+
+=cut
+
+sub eval_rule {
+    my $self = shift;
+    my $attr = shift;
+
+    my $process = $self->local_rule->{ $self->rule_name }->{process};
+    my $text;
+
+    my $eval_rule = 'eval_rule_'.$self->rule_name;
+    if ( $attr->can( $eval_rule ) ) {
+      try {
+        $text = $attr->$eval_rule($process);
+      }
+      catch{
+        $self->app_log->warn('There was a problem evaluating rule. Error is:');
+        $self->app_log->warn($_);
+      };
+    }
+    else {
+        $text = $attr->interpol_directive($process);
+    }
 
     return $text;
 }

@@ -1,8 +1,9 @@
 package BioX::Workflow::Command::run::Rules::Directives::Sample;
 
 use MooseX::App::Role;
+use namespace::autoclean;
 
-use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
+use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsPaths AbsFile/;
 
 =head3 sample_rule
@@ -17,6 +18,31 @@ has 'sample_rule' => (
     default   => sub { return "(.*)"; },
     clearer   => 'clear_sample_rule',
     predicate => 'has_sample_rule',
+);
+
+=head3 maxdepth
+
+Like find -max_depth
+
+=cut
+
+has 'maxdepth' => (
+    is      => 'rw',
+    default => 1
+);
+
+=head3 sample_glob
+
+Alternately, instead of sample_rule use sample_glob to find files. Glob does not
+differentiate between files and directories.
+
+=cut
+
+has 'sample_glob' => (
+    is        => 'rw',
+    isa       => 'Str',
+    clearer   => 'clear_sample_glob',
+    predicate => 'has_sample_glob',
 );
 
 =head2 find_sample_bydir
@@ -94,20 +120,6 @@ This is our actual list of samples
 
 =cut
 
-# has 'samples' => (
-#     traits        => ['Array'],
-#     is            => 'rw',
-#     required      => 0,
-#     isa           => ArrayRefOfStrs,
-#     documentation => 'Choose a subset of samples',
-#     default       => sub { [] },
-#     handles       => {
-#         all_samples  => 'elements',
-#         has_samples  => 'count',
-#         join_samples => 'join',
-#     },
-# );
-
 option 'samples' => (
     traits    => ['Array'],
     is        => 'rw',
@@ -123,6 +135,23 @@ option 'samples' => (
     },
     documentation =>
 q{Supply samples on the command line as --samples sample1 --samples sample2, or find through sample_rule.}
+);
+
+option 'exclude_samples' => (
+    traits    => ['Array'],
+    is        => 'rw',
+    isa       => 'ArrayRef',
+    default   => sub { [] },
+    required  => 0,
+    cmd_split => qr/,/,
+    handles   => {
+        all_exclude_samples    => 'elements',
+        has_exclude_samples    => 'count',
+        has_no_exclude_samples => 'is_empty',
+        sorted_exclude_samples => 'sort',
+    },
+    documentation =>
+q{Exclude samples from analysis --exclude_samples sample1 --exclude_samples sample2}
 );
 
 has 'sample' => (
@@ -161,9 +190,8 @@ Infiles to be processed
 =cut
 
 has 'sample_files' => (
-    is  => 'rw',
-    # isa => 'ArrayRef',
-    isa => Paths,
+    is     => 'rw',
+    isa    => Paths,
     coerce => 1,
 );
 

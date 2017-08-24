@@ -4,46 +4,34 @@ use v5.10;
 our $VERSION = '2.0.10';
 
 use MooseX::App qw(Color);
-use MooseX::Types::Path::Tiny qw/Path/;
-use Cwd qw(getcwd);
-use File::Spec;
-use File::Path qw(make_path);
 
 app_strict 0;
 
 with 'BioX::Workflow::Command::Utils::Log';
-with 'BioX::Workflow::Command::Utils::Plugin';
-with 'HPC::Runner::Command::Utils::ManyConfigs';
+with 'BioSAILs::Utils::Plugin';
+with 'BioSAILs::Utils::LoadConfigs';
 
-option 'config_base' => (
+option '+config_base' => (
     is      => 'rw',
     default => '.bioxworkflow',
 );
 
-option 'cache_dir' => (
-    is      => 'rw',
-    isa     => Path,
-    coerce  => 1,
-    default => sub {
-        return File::Spec->catfile( getcwd(), '.biox-cache' );
-    },
-    documentation =>
-      'BioX-Workflow will cache some information during your runs. '
-      . 'Delete with caution! '
-      . '[Default: '
-      . getcwd()
-      . '/biox-cache. ]'
-);
-
 sub BUILD {}
 
-before 'BUILD' => sub {
+after 'BUILD' => sub {
     my $self = shift;
 
-    make_path( $self->cache_dir );
-    make_path( File::Spec->catdir( $self->cache_dir, 'logs' ) );
-    make_path( File::Spec->catdir( $self->cache_dir, 'workflows' ) );
+    return unless $self->plugins;
+
+    $self->app_load_plugins( $self->plugins );
+    $self->parse_plugin_opts( $self->plugins_opts );
+
+    ##Must reload the configs to get any options from the plugins
+    if ( $self->has_config_files ) {
+        $self->load_configs;
+    }
 };
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
@@ -61,6 +49,7 @@ BioX::Workflow::Command - Opinionated Bioinformatics Genomics Workflow Creator
 =head1 SYNOPSIS
 
   biox run -w workflow.yml
+  biox -h
 
 =head1 documentation
 
