@@ -43,10 +43,10 @@ sub write_test_file {
         ],
         rules => [
             {
-                its_a_rule => {
+                jellyfish => {
                     'local' => [
                         { root_dir => 'data/raw' },
-                        { outdir   => '{$self->jellyfish_dir}' },
+                        { register_namespace => ['Test::Custom::Eval'] },
                         {
                             INPUT => '{$self->jellyfish_dir}/some_input_rule1'
                         },
@@ -105,8 +105,19 @@ sub test_001 {
     is_deeply( $test->exclude_samples, [ 'Sample_03' ] );
     is_deeply( $test->samples, [ 'Sample_01', 'Sample_02' ] );
 
-    ok((-d 'data/analysis/Sample_01/jellyfish'));
-    ok((-d 'data/analysis/Sample_02/jellyfish'));
+    ok((-d 'data/processed/Sample_01/jellyfish'));
+    ok((-d 'data/processed/Sample_02/jellyfish'));
+
+    is_deeply($test->process_obj->{jellyfish}->{text}, ['HELLO FROM JELLYFISH!', 'HELLO FROM JELLYFISH!']);
+}
+
+sub test_002 {
+  my $init_args = [ 'run', '--workflow', 'test.yml' ];
+  my $args = MooseX::App::ParsedArgv->new( argv => $init_args );
+
+  diag Dumper($args);
+  ok(1);
+
 }
 
 sub _init_rule {
@@ -118,3 +129,19 @@ sub _init_rule {
     $test->p_rule_name( $test->rule_name );
     $test->p_local_attr( dclone( $test->local_attr ) );
 }
+
+1;
+
+package Test::Custom::Eval;
+
+use Moose::Role;
+use namespace::autoclean;
+
+sub eval_rule_jellyfish {
+  my $self = shift;
+  my $process = shift;
+
+  return 'HELLO FROM JELLYFISH!';
+}
+
+1;

@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Added additional interface for custom processing of rules
 	- Bug fix for samples are files but output structure should be directories.
 	- Bug fixes for sample_rule/file_rule.
 	- Bug fix for mixed HPC types.
