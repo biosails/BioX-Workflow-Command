@@ -8,7 +8,7 @@ use Text::ASCIITable;
 use Number::Bytes::Human qw(format_bytes parse_bytes);
 use File::Details;
 use File::Basename;
-use List::MoreUtils qw(uniq);
+use List::Util qw(uniq);
 use Try::Tiny;
 use Path::Tiny;
 
