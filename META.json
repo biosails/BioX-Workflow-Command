@@ -117,7 +117,7 @@
          "web" : "https://github.com/biosails/BioX-Workflow-Command"
       }
    },
-   "version" : "2.2.0",
+   "version" : "2.2.1",
    "x_serialization_backend" : "JSON::XS version 3.03"
 }
 
