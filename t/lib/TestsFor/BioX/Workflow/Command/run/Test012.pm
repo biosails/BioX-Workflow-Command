@@ -111,15 +111,6 @@ sub test_001 {
     is_deeply($test->process_obj->{jellyfish}->{text}, ['HELLO FROM JELLYFISH!', 'HELLO FROM JELLYFISH!']);
 }
 
-sub test_002 {
-  my $init_args = [ 'run', '--workflow', 'test.yml' ];
-  my $args = MooseX::App::ParsedArgv->new( argv => $init_args );
-
-  diag Dumper($args);
-  ok(1);
-
-}
-
 sub _init_rule {
     my $test = shift;
     my $rule = shift;
