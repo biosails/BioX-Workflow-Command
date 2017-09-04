@@ -250,20 +250,14 @@ By default all rules are selected
 sub filter_rule_keys {
     my $self = shift;
 
-    # if ( !$self->use_timestamps ) {
     $self->select_rule_keys( dclone( $self->rule_names ) );
 
-    # }
     $self->set_rule_keys('select');
     $self->set_rule_keys('omit');
 
     $self->app_log->info( 'Selected rules:' . "\t"
           . join( ', ', @{ $self->select_rule_keys } )
           . "\n" );
-
-    # unless $self->use_timestamps;
-    # $self->app_log->info( 'Using timestamps ... ' . 'Rules to process TBA' )
-    #   if $self->use_timestamps;
 }
 
 =head3 set_rule_names
@@ -647,6 +641,9 @@ sub eval_process {
 
     $self->walk_FILES($attr);
     $self->clear_files;
+
+    ##Carry stash when not in template
+    $self->local_attr->stash(dclone($attr->stash));
 
     return $text;
 }
