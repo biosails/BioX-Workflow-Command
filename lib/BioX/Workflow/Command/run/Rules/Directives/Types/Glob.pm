@@ -1,6 +1,7 @@
 package BioX::Workflow::Command::run::Rules::Directives::Types::Glob;
 
 use Moose::Role;
+use namespace::autoclean;
 use File::Glob;
 
 after 'BUILD' => sub {
@@ -10,7 +11,7 @@ after 'BUILD' => sub {
         'glob',
         {
             builder => 'create_reg_attr',
-            lookup  => ['.*glob$']
+            lookup  => ['.*_glob$']
         }
     );
 
@@ -23,8 +24,11 @@ sub process_directive_glob {
     my $k    = shift;
     my $v    = shift;
 
-    my $data = glob($v);
-    $self->$k($data);
+    return if $k eq 'sample_glob';
+
+    my $text = $self->interpol_directive($v);
+    my @data = glob($text);
+    $self->$k( \@data );
 }
 
 1;
