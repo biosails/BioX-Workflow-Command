@@ -10,8 +10,6 @@ use Time::localtime;
 use File::Basename;
 use DateTime::Format::Strptime;
 
-with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
-
 =head3 files
 
 Files just for this rule
