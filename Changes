@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.2.2  2017-09-06 12:42:39 GST
 	- Added support for Mustache templating engine
 	- Fixed the Glob Type
 	- 2.2.2 milestone - https://github.com/biosails/BioX-Workflow-Command/milestone/4
