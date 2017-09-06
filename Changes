@@ -1,6 +1,9 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Added support for Mustache templating engine
+	- Fixed the Glob Type
+	- 2.2.2 milestone - https://github.com/biosails/BioX-Workflow-Command/milestone/4
 
 2.2.1  2017-08-25 05:10:43 GST
 	- Removed List::MoreUtils - funky licensing

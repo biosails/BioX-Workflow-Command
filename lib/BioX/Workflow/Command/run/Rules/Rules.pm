@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Rules::Rules;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use Storable qw(dclone);
 use Data::Merger qw(merger);
 use Data::Walk;
@@ -250,20 +252,14 @@ By default all rules are selected
 sub filter_rule_keys {
     my $self = shift;
 
-    # if ( !$self->use_timestamps ) {
     $self->select_rule_keys( dclone( $self->rule_names ) );
 
-    # }
     $self->set_rule_keys('select');
     $self->set_rule_keys('omit');
 
     $self->app_log->info( 'Selected rules:' . "\t"
           . join( ', ', @{ $self->select_rule_keys } )
           . "\n" );
-
-    # unless $self->use_timestamps;
-    # $self->app_log->info( 'Using timestamps ... ' . 'Rules to process TBA' )
-    #   if $self->use_timestamps;
 }
 
 =head3 set_rule_names
@@ -523,6 +519,7 @@ sub template_process {
             }
         }
         $self->process_obj->{ $self->rule_name }->{text} = $texts;
+        $self->process_obj->{ $self->rule_name }->{run_stats} = $self->local_attr->run_stats;
     }
     else {
         $self->process_obj->{ $self->rule_name }->{text} = $dummy_texts;
@@ -647,6 +644,9 @@ sub eval_process {
 
     $self->walk_FILES($attr);
     $self->clear_files;
+
+    ##Carry stash when not in template
+    $self->local_attr->stash(dclone($attr->stash));
 
     return $text;
 }

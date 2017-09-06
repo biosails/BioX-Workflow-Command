@@ -33,6 +33,7 @@ after 'BUILD' => sub {
 };
 
 
+#This class is not compatible with namespace::autoclean...
 no Moose;
 __PACKAGE__->meta->make_immutable;
 

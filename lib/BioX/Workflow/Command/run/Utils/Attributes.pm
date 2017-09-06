@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Utils::Attributes;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use Storable qw(dclone);
 use File::Copy;
@@ -36,12 +38,6 @@ option 'samples' => (
         join_samples => 'join',
     },
     cmd_aliases => ['s'],
-);
-
-option 'run_stats' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 1,
 );
 
 has 'cached_workflow' => (
