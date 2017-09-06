@@ -2,6 +2,7 @@ package BioX::Workflow::Command::run::Rules::Directives::Types::Glob;
 
 use Moose::Role;
 use namespace::autoclean;
+
 use File::Glob;
 
 after 'BUILD' => sub {

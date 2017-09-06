@@ -3,6 +3,8 @@ package BioX::Workflow::Command::add;
 use v5.10;
 
 use MooseX::App::Command;
+use namespace::autoclean;
+
 use YAML;
 
 extends 'BioX::Workflow::Command';
@@ -50,7 +52,6 @@ sub execute {
     $self->fh->close;
 }
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

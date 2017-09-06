@@ -1,6 +1,9 @@
 package BioX::Workflow::Command::validate;
+
 use v5.10;
+
 use MooseX::App::Command;
+use namespace::autoclean;
 
 extends 'BioX::Workflow::Command';
 with 'BioX::Workflow::Command::Utils::Log';
@@ -18,7 +21,6 @@ sub execute {
     }
 }
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Utils::Files::TrackChanges;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use Data::Walk;
 use File::Details;
 use File::stat;

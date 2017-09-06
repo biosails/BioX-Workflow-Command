@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Rules::Rules;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use Storable qw(dclone);
 use Data::Merger qw(merger);
 use Data::Walk;

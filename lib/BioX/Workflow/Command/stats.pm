@@ -2,6 +2,8 @@ package BioX::Workflow::Command::stats;
 
 use v5.10;
 use MooseX::App::Command;
+use namespace::autoclean;
+
 use Log::Log4perl qw(:easy);
 use DateTime;
 use Text::ASCIITable;
@@ -207,7 +209,6 @@ after 'template_process' => sub {
 around 'print_process_workflow' => sub {
 };
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Utils::Attributes;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
 use Storable qw(dclone);
 use File::Copy;

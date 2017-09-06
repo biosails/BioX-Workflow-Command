@@ -2,6 +2,7 @@ package BioX::Workflow::Command::run::Rules::Directives::Interpolate;
 
 use Moose::Role;
 use namespace::autoclean;
+
 use Moose::Util qw/apply_all_roles/;
 
 use Try::Tiny;

@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run::Utils::Files::ResolveDeps;
 
 use MooseX::App::Role;
+use namespace::autoclean;
+
 use String::Approx 'amatch';
 use Algorithm::Dependency::Source::HoA;
 use Algorithm::Dependency::Ordered;

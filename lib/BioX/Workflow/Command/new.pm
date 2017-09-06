@@ -2,6 +2,7 @@ package BioX::Workflow::Command::new;
 
 use v5.10;
 use MooseX::App::Command;
+use namespace::autoclean;
 
 use Storable qw(dclone);
 use YAML;
@@ -65,7 +66,6 @@ sub execute {
     $self->fh->close;
 }
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;

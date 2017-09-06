@@ -2,6 +2,7 @@ package BioX::Workflow::Command::run::Rules::Directives;
 
 use Moose;
 use namespace::autoclean;
+
 use Moose::Util qw/apply_all_roles/;
 
 with 'BioX::Workflow::Command::run::Rules::Directives::Types::HPC';
@@ -260,7 +261,6 @@ after 'BUILD' => sub {
     $self->interpol_directive_cache( {} );
 };
 
-no Moose;
 __PACKAGE__->meta->make_immutable;
 
 1;
