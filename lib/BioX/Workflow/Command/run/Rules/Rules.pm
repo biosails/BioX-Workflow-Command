@@ -11,12 +11,11 @@ use File::Path qw(make_path remove_tree);
 use Try::Tiny;
 use Path::Tiny;
 
-with 'BioX::Workflow::Command::Utils::Files::TrackChanges';
-use BioX::Workflow::Command::Utils::Traits qw(ArrayRefOfStrs);
+use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
 
 =head1 Name
 
-BioX::Workflow::Command::run::Utils::Rules
+BioX::Workflow::Command::run::Rules::Rules
 
 =head2 Description
 
