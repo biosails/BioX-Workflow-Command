@@ -9,7 +9,6 @@ use Path::Tiny;
 use Text::ASCIITable;
 use Data::Dumper;
 
-# Not even close to this yet
 option 'auto_deps' => (
     is      => 'rw',
     isa     => 'Bool',
@@ -93,7 +92,7 @@ sub print_stats_rules {
     my $self = shift;
     my $rule = shift;
 
-    return unless $self->run_stats;
+    return unless $self->process_obj->{$rule}->{run_stats};
     $self->fh->say("");
 
     $self->fh->say( $self->comment_char );
@@ -109,6 +108,7 @@ sub print_stats_rules {
     $self->fh->say( '#HPC deps=' . $rule );
     $self->fh->say('#HPC mem=2GB');
     $self->fh->say('#HPC cpus_per_task=1');
+    $self->fh->say('#HPC commands_per_node=1000');
     $self->fh->say( $self->comment_char );
     $self->fh->say("");
 

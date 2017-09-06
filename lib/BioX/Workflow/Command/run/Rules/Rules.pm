@@ -517,6 +517,7 @@ sub template_process {
             }
         }
         $self->process_obj->{ $self->rule_name }->{text} = $texts;
+        $self->process_obj->{ $self->rule_name }->{run_stats} = $self->local_attr->run_stats;
     }
     else {
         $self->process_obj->{ $self->rule_name }->{text} = $dummy_texts;

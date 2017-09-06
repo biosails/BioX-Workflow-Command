@@ -6,8 +6,8 @@ extends 'BioX::Workflow::Command';
 with 'BioX::Workflow::Command::Utils::Log';
 with 'BioX::Workflow::Command::Utils::Files';
 
-command_short_description 'Validate your workflow';
-command_long_description 'Validate your workflow';
+command_short_description 'Validate your workflow.';
+command_long_description 'Validate your workflow.';
 
 sub execute {
     my $self = shift;

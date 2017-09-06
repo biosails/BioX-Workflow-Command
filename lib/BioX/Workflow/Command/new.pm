@@ -15,8 +15,8 @@ extends 'BioX::Workflow::Command';
 with 'BioX::Workflow::Command::Utils::Create';
 with 'BioX::Workflow::Command::Utils::Files';
 
-command_short_description 'Create a new workflow';
-command_long_description 'Create a new workflow';
+command_short_description 'Create a new workflow.';
+command_long_description 'Create a new workflow.';
 
 =head1 BioX::Workflow::Command::new
 

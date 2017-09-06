@@ -38,12 +38,6 @@ option 'samples' => (
     cmd_aliases => ['s'],
 );
 
-option 'run_stats' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 1,
-);
-
 has 'cached_workflow' => (
     is      => 'rw',
     isa     => 'Str',

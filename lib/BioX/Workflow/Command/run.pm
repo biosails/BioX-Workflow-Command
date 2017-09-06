@@ -19,7 +19,7 @@ with 'BioX::Workflow::Command::Utils::Files';
 with 'BioSAILs::Utils::Files::CacheDir';
 with 'BioSAILs::Utils::CacheUtils';
 
-command_short_description 'Run your workflow';
+command_short_description 'Run your workflow.';
 command_long_description
   'Run your workflow, process the variables, and create all your directories.';
 

@@ -103,6 +103,13 @@ has 'override_process' => (
     },
 );
 
+has 'run_stats' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 1,
+);
+
+
 ##Add in support for chunks
 ##This is useful for features where we want to do things like
 ##split a file into parts
