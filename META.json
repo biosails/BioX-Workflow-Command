@@ -94,6 +94,7 @@
             "File::Spec::Functions" : "0",
             "File::Temp" : "0",
             "FindBin" : "0",
+            "IO::Interactive" : "0",
             "JSON" : "0",
             "Test::Class::Moose" : "0",
             "Test::Class::Moose::Load" : "0",

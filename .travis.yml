@@ -7,5 +7,6 @@ install:
    - cpanm -nq --installdeps .
    - cpanm --notest IO::Interactive
    - perl Build.PL
+   - perl ./Build 
    - perl ./Build test
    - perl ./Build install
