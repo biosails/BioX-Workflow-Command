@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.3.0  2017-11-28 09:07:04 GST
 	- Added fix for multiline variables
 	- Made sample_files full path
 	- Added some tests
