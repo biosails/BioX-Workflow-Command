@@ -10,3 +10,5 @@ install:
    - perl ./Build 
    - perl ./Build test
    - perl ./Build install
+   - biox run -h
+   - biox new -h
