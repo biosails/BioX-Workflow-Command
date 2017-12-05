@@ -6,6 +6,7 @@ our $VERSION = '2.3.1';
 use MooseX::App qw(Color);
 
 app_strict 0;
+app_exclude qw(BioX::Workflow::Command::run::Rules::Directives::Types::HPC);
 
 with 'BioX::Workflow::Command::Utils::Log';
 with 'BioSAILs::Utils::Plugin';
