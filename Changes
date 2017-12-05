@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Bug fix in Debug
 
 2.3.0  2017-11-28 09:07:04 GST
 	- Added fix for multiline variables
