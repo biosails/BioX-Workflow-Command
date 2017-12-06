@@ -1,7 +1,7 @@
 matrix:
   include:
     - os: linux
-      language: c
+      language: perl
       perl:
         - "5.22"
         - "5.20"
