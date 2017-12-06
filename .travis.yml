@@ -8,7 +8,8 @@ matrix:
         - "5.18"
       install:
          - cpanm -nq --installdeps .
-         - cpanm --notest IO::Interactive
+         - cpanm -nq Module::Build::Tiny
+         - cpanm -nq IO::Interactive
          - perl Build.PL
          - perl ./Build
          - perl ./Build test
@@ -28,11 +29,12 @@ matrix:
         - hash -r
         - conda config --set always_yes yes --set changeps1 no
         - conda config --add channels conda-forge
-        - conda config --add channels bioconda 
+        - conda config --add channels bioconda
         - conda update -q conda
         - conda info -a
         - conda create -q -n test-environment perl perl-app-cpanminus
         - cpanm -nq --installdeps .
+        - cpanm -nq Module::Build::Tiny
         - cpanm --notest IO::Interactive
         - perl Build.PL
         - perl ./Build
