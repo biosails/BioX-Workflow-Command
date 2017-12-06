@@ -7,6 +7,7 @@ matrix:
         - "5.20"
         - "5.18"
       install:
+         - which cpanm
          - cpanm -nq --installdeps .
          - cpanm -v Module::Build::Tiny
          - cpanm -nq IO::Interactive
