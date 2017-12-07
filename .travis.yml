@@ -2,10 +2,7 @@ matrix:
   include:
     - os: linux
       language: perl
-      perl:
-        - "5.22"
-        - "5.20"
-        - "5.18"
+      perl: "5.22"
       install:
          - which cpanm
          - cpanm -nq --installdeps .
