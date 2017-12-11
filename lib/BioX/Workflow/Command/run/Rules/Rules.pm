@@ -5,7 +5,6 @@ use namespace::autoclean;
 
 use Storable qw(dclone);
 use Data::Merger qw(merger);
-use Data::Walk;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use Try::Tiny;
