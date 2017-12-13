@@ -13,12 +13,6 @@ has 'interpol_directive_cache' => (
     default => sub { {} },
 );
 
-has 'errors' => (
-    is      => 'rw',
-    isa     => 'Bool',
-    default => 0,
-);
-
 #TODO This should not be here
 has 'before_meta' => (
     traits    => ['String'],

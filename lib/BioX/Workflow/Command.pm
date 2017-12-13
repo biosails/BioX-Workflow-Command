@@ -3,7 +3,7 @@ package BioX::Workflow::Command;
 use v5.10;
 our $VERSION = '2.3.1';
 
-use MooseX::App qw(Color);
+use MooseX::App 1.39 qw(Color);
 
 app_strict 0;
 app_exclude qw(BioX::Workflow::Command::run::Rules BioX::Workflow::Command::run::Utils BioX::Workflow::Command::Utils);

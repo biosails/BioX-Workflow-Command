@@ -6,24 +6,39 @@ use namespace::autoclean;
 use Data::Walk 2.01;
 use Path::Tiny;
 
+# has 'current_key' => (
+#     is      => 'rw',
+#     isa     => 'Str',
+#     default => ''
+# );
+
+# has 'track_errors' => (
+#     is      => 'rw',
+#     isa     => 'HashRef',
+#     default => sub { return {} },
+# );
+
 sub walk_process_data {
     my $self = shift;
     my $keys = shift;
 
     foreach my $k ( @{$keys} ) {
+        ##I don't think this does anything...
         next if ref($k);
+        # $self->current_key($k);
         my $v = $self->$k;
         ##Leftover of backwards compatibility
         if ( $k eq 'find_by_dir' ) {
             $self->process_directive( $k, $v );
         }
-        elsif($self->search_registered_process_directives($k, $v)){
-          next;
+        elsif ( $self->search_registered_process_directives( $k, $v ) ) {
+            next;
         }
         else {
             $self->process_directive( $k, $v );
         }
     }
+    # $self->current_key('');
 }
 
 ##TODO Combine this with search_registered_types
@@ -60,9 +75,10 @@ sub process_directive {
     my $v    = shift;
     my $path = shift;
 
+    #TODO Need to keep track of errors here
     if ( ref($v) ) {
         walk {
-            wanted => sub { $self->walk_directives( @_ ) }
+            wanted => sub { $self->walk_directives(  @_ ) }
           },
           $self->$k;
     }
@@ -71,6 +87,7 @@ sub process_directive {
         $text = $self->interpol_directive($v) if $v;
         $self->$k($text);
     }
+
 }
 
 =head3 walk_directives

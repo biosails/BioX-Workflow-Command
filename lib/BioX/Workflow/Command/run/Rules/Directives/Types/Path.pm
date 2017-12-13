@@ -138,7 +138,7 @@ sub process_directive_path {
 
     if ( ref($v) ) {
         walk {
-            wanted => sub { $self->walk_directives_path( @_ ) }
+            wanted => sub { $self->walk_directives_path(  @_ ) }
           },
           $self->$k;
     }
@@ -163,6 +163,7 @@ Acts funny with $self->some_other_thing is not a reference
 
 sub walk_directives_path {
     my $self = shift;
+    my $k = shift;
     my $ref  = shift;
 
     return if ref($ref);

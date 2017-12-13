@@ -457,8 +457,6 @@ sub sanity_check_rule {
 
     $self->rule_name( $keys[0] );
 
-    # $self->app_log->info( 'Sanity check on rule ' . $self->rule_name );
-
     if ( !exists $self->local_rule->{ $self->rule_name }->{process} ) {
         $self->app_log->fatal(
             'Sanity check fail: Rule does not have a process!');
@@ -509,6 +507,7 @@ sub template_process {
                 push( @$texts, $new_text );
             }
         }
+
         $self->process_obj->{ $self->rule_name }->{text} = $texts;
         $self->process_obj->{ $self->rule_name }->{run_stats} =
           $self->local_attr->run_stats;
@@ -620,7 +619,10 @@ sub walk_attr {
     my $attr = dclone( $self->local_attr );
     $self->check_indir_outdir($attr);
 
+    # $attr->sample( $self->sample ) if $self->has_sample;
+
     $attr->walk_process_data( $self->rule_keys );
+
 
     return $attr;
 }
