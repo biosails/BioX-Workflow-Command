@@ -573,8 +573,6 @@ sub check_iterables {
     #First check the global for any lists
     my $use_iters = $self->use_iterables;
 
-    # $self->walk_indir_outdir($use_iters);
-
     if ( !$use_iters ) {
         $texts = $self->in_template_process( $sample, $texts );
         return $texts;
