@@ -4,6 +4,7 @@ use MooseX::App::Role;
 use namespace::autoclean;
 
 with 'BioX::Workflow::Command::run::Rules::Directives::Sample';
+##TODO This should go somewhere else
 with 'BioX::Workflow::Command::run::Rules::Rules';
 
 use File::Find::Rule;

@@ -5,7 +5,6 @@ use namespace::autoclean;
 
 use Storable qw(dclone);
 use Data::Merger qw(merger);
-use Data::Walk;
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use Try::Tiny;
@@ -573,8 +572,6 @@ sub check_iterables {
 
     #First check the global for any lists
     my $use_iters = $self->use_iterables;
-
-    # $self->walk_indir_outdir($use_iters);
 
     if ( !$use_iters ) {
         $texts = $self->in_template_process( $sample, $texts );

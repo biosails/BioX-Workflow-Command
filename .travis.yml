@@ -1,14 +1,40 @@
-language: perl
-perl:
-  - "5.22"
-  - "5.20"
-  - "5.18"
-install:
-   - cpanm -nq --installdeps .
-   - cpanm --notest IO::Interactive
-   - perl Build.PL
-   - perl ./Build 
-   - perl ./Build test
-   - perl ./Build install
-   - biox run -h
-   - biox new -h
+matrix:
+  include:
+    - os: linux
+      language: perl
+      perl: "5.22"
+      install:
+         - which cpanm
+         - cpanm -nq --installdeps .
+         - cpanm -v Module::Build::Tiny
+         - cpanm -nq IO::Interactive
+         - perl Build.PL
+         - perl ./Build
+         - perl ./Build test
+         - perl ./Build install
+      script:
+        - biox run -h
+        - biox new -h
+    - os: osx
+      install:
+        - wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
+        - bash miniconda.sh -b -p $HOME/miniconda
+        - export PATH="$HOME/miniconda/bin:$PATH"
+        - hash -r
+        - conda config --set always_yes yes --set changeps1 no
+        - conda config --add channels conda-forge
+        - conda config --add channels bioconda
+        - conda update -q conda
+        - conda info -a
+        - conda create -q -n build perl perl-app-cpanminus
+        - source activate build
+        - cpanm -nq --installdeps .
+        - cpanm -v Module::Build::Tiny
+        - cpanm --notest IO::Interactive
+        - perl Build.PL
+        - perl ./Build
+        - perl ./Build test
+        - perl ./Build install
+      script:
+        - biox run -h
+        - biox new -h

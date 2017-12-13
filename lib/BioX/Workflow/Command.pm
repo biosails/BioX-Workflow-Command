@@ -6,6 +6,7 @@ our $VERSION = '2.3.1';
 use MooseX::App qw(Color);
 
 app_strict 0;
+app_exclude qw(BioX::Workflow::Command::run::Rules BioX::Workflow::Command::run::Utils BioX::Workflow::Command::Utils);
 
 with 'BioX::Workflow::Command::Utils::Log';
 with 'BioSAILs::Utils::Plugin';
@@ -33,7 +34,6 @@ after 'BUILD' => sub {
 };
 
 
-#This class is not compatible with namespace::autoclean...
 no Moose;
 __PACKAGE__->meta->make_immutable;
 

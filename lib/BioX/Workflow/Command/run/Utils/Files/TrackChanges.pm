@@ -3,7 +3,7 @@ package BioX::Workflow::Command::run::Utils::Files::TrackChanges;
 use MooseX::App::Role;
 use namespace::autoclean;
 
-use Data::Walk;
+use Data::Walk 2.01;
 use File::Details;
 use File::stat;
 use Time::localtime;

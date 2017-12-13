@@ -3,7 +3,7 @@ package BioX::Workflow::Command::run::Rules::Directives::Walk;
 use Moose::Role;
 use namespace::autoclean;
 
-use Data::Walk;
+use Data::Walk 2.01;
 use Path::Tiny;
 
 sub walk_process_data {

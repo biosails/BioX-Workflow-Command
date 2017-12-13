@@ -6,7 +6,7 @@ use namespace::autoclean;
 use MooseX::Types::Path::Tiny qw/Path Paths AbsPath AbsFile/;
 use Path::Tiny;
 use Cwd;
-use Data::Walk;
+use Data::Walk 2.01;
 
 =head2 File Options
 
