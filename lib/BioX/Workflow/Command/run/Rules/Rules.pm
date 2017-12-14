@@ -165,7 +165,6 @@ option 'omit_match' => (
 );
 
 # TODO Change this to rules?
-
 has 'rule_keys' => (
     is      => 'rw',
     isa     => 'ArrayRef',
@@ -223,12 +222,10 @@ sub iterate_rules {
     $self->filter_rule_keys;
 
     foreach my $rule (@$rules) {
-
         $self->local_rule($rule);
         $self->process_rule;
         $self->p_rule_name( $self->rule_name );
         $self->p_local_attr( dclone( $self->local_attr ) );
-
     }
 
     $self->post_process_rules;
@@ -271,6 +268,7 @@ sub set_rule_names {
     my $rules = $self->workflow_data->{rules};
 
     my @rule_names = map { my ($key) = keys %{$_}; $key } @{$rules};
+    @rule_names = map {  $_ =~ s/^\s+|\s+$//g; $_ } @rule_names;
     $self->rule_names( \@rule_names );
     $self->app_log->info( 'Found rules:' . "\t" . join( ', ', @rule_names ) );
 }
@@ -448,6 +446,7 @@ sub sanity_check_rule {
 
     # $self->app_log->info("");
     # $self->app_log->info("Beginning sanity check");
+    ##TODO Create Exception for these
     if ( $#keys != 0 ) {
         $self->app_log->fatal(
             'Sanity check fail: There should be one rule name!');
@@ -617,9 +616,8 @@ sub walk_attr {
     my $self = shift;
 
     my $attr = dclone( $self->local_attr );
+    $attr->sample( $self->sample ) if $self->has_sample;
     $self->check_indir_outdir($attr);
-
-    # $attr->sample( $self->sample ) if $self->has_sample;
 
     $attr->walk_process_data( $self->rule_keys );
 
@@ -631,7 +629,7 @@ sub eval_process {
     my $self = shift;
 
     my $attr = $self->walk_attr;
-    $attr->sample( $self->sample ) if $self->has_sample;
+    # $attr->sample( $self->sample ) if $self->has_sample;
 
     $self->walk_indir_outdir($attr);
 

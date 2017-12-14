@@ -6,31 +6,20 @@ use namespace::autoclean;
 use Data::Walk 2.01;
 use Path::Tiny;
 
-# has 'current_key' => (
-#     is      => 'rw',
-#     isa     => 'Str',
-#     default => ''
-# );
-
-# has 'track_errors' => (
-#     is      => 'rw',
-#     isa     => 'HashRef',
-#     default => sub { return {} },
-# );
-
 sub walk_process_data {
     my $self = shift;
     my $keys = shift;
 
     foreach my $k ( @{$keys} ) {
+        $DB::single = 2;
         ##I don't think this does anything...
         next if ref($k);
-        # $self->current_key($k);
         my $v = $self->$k;
         ##Leftover of backwards compatibility
         if ( $k eq 'find_by_dir' ) {
             $self->process_directive( $k, $v );
         }
+        ##If its a type search for the type
         elsif ( $self->search_registered_process_directives( $k, $v ) ) {
             next;
         }
@@ -38,7 +27,6 @@ sub walk_process_data {
             $self->process_directive( $k, $v );
         }
     }
-    # $self->current_key('');
 }
 
 ##TODO Combine this with search_registered_types
@@ -48,6 +36,7 @@ sub search_registered_process_directives {
     my $v    = shift;
 
     foreach my $key ( keys %{ $self->register_process_directives } ) {
+        $DB::single = 2;
         next unless exists $self->register_process_directives->{$key}->{lookup};
         next
           unless exists $self->register_process_directives->{$key}->{builder};
@@ -78,7 +67,7 @@ sub process_directive {
     #TODO Need to keep track of errors here
     if ( ref($v) ) {
         walk {
-            wanted => sub { $self->walk_directives(  @_ ) }
+            wanted => sub { $self->walk_directives(@_) }
           },
           $self->$k;
     }

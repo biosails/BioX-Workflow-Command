@@ -6,7 +6,13 @@ our $VERSION = '2.3.1';
 use MooseX::App 1.39 qw(Color);
 
 app_strict 0;
-app_exclude qw(BioX::Workflow::Command::run::Rules BioX::Workflow::Command::run::Utils BioX::Workflow::Command::Utils);
+app_exclude(
+    'BioX::Workflow::Command::run::Rules',
+    'BioX::Workflow::Command::run::Utils',
+    'BioX::Workflow::Command::Utils',
+    'BioX::Workflow::Command::inspect::Utils',
+    'BioX::Workflow::Command::Exceptions'
+);
 
 with 'BioX::Workflow::Command::Utils::Log';
 with 'BioSAILs::Utils::Plugin';
@@ -17,7 +23,7 @@ option '+config_base' => (
     default => '.bioxworkflow',
 );
 
-sub BUILD {}
+sub BUILD { }
 
 after 'BUILD' => sub {
     my $self = shift;
@@ -32,7 +38,6 @@ after 'BUILD' => sub {
         $self->load_configs;
     }
 };
-
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

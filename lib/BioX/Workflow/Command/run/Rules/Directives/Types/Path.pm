@@ -110,7 +110,7 @@ after 'BUILD' => sub {
         {
             builder => 'process_directive_path',
             lookup =>
-              [ '^indir$', '^outdir$', '^INPUT$', '^OUTPUT$', '.*_dir$' ]
+              [ '^indir$', '^outdir$', '^INPUT$', '^OUTPUT$', '.*_dir$', '^cwd$' ]
         }
     );
 };
@@ -138,14 +138,14 @@ sub process_directive_path {
 
     if ( ref($v) ) {
         walk {
-            wanted => sub { $self->walk_directives_path(  @_ ) }
+            wanted => sub { $self->walk_directives_path(@_) }
           },
           $self->$k;
     }
     else {
         my $text = '';
         $text = $self->interpol_directive($v) if $v;
-        if (  $text ne '' ) {
+        if ( $text ne '' ) {
             $text = $self->return_path($text);
         }
         $self->$k($text);
@@ -163,7 +163,6 @@ Acts funny with $self->some_other_thing is not a reference
 
 sub walk_directives_path {
     my $self = shift;
-    my $k = shift;
     my $ref  = shift;
 
     return if ref($ref);
@@ -187,7 +186,7 @@ sub return_path {
     else {
         $text = path($text);
     }
-    return $text;
+    return "$text";
 }
 
 1;
