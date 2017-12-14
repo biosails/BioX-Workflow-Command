@@ -7,6 +7,7 @@ has 'message' => (
     is      => 'rw',
     isa     => 'Str',
     default => 'Error was thrown.',
+    documentation => 'This is a general message for the type of error thrown.'
 );
 
 has 'info' => (

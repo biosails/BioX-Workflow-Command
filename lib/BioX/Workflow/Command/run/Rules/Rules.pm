@@ -268,7 +268,7 @@ sub set_rule_names {
     my $rules = $self->workflow_data->{rules};
 
     my @rule_names = map { my ($key) = keys %{$_}; $key } @{$rules};
-    @rule_names = map {  $_ =~ s/^\s+|\s+$//g; $_ } @rule_names;
+    @rule_names = map { my $t = $_; $t =~ s/^\s+|\s+$//g; $t } @rule_names;
     $self->rule_names( \@rule_names );
     $self->app_log->info( 'Found rules:' . "\t" . join( ', ', @rule_names ) );
 }
@@ -621,7 +621,6 @@ sub walk_attr {
 
     $attr->walk_process_data( $self->rule_keys );
 
-
     return $attr;
 }
 
@@ -629,6 +628,7 @@ sub eval_process {
     my $self = shift;
 
     my $attr = $self->walk_attr;
+
     # $attr->sample( $self->sample ) if $self->has_sample;
 
     $self->walk_indir_outdir($attr);
@@ -740,8 +740,6 @@ sub walk_indir_outdir_sample {
 
     my $use_iters    = $self->use_iterables;
     my $dummy_sample = $self->dummy_sample;
-
-    my @samples = @{ $attr->samples } if $attr->has_samples;
 
     foreach my $sample ( $attr->all_samples ) {
         my $new_text = $text;

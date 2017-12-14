@@ -8,6 +8,7 @@ use Data::Dumper;
 use Storable qw(dclone);
 use YAML;
 use Try::Tiny;
+use JSON;
 
 extends 'BioX::Workflow::Command';
 use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
@@ -33,7 +34,7 @@ command_long_description
 =head1 BioX::Workflow::Command::inspect
 
   biox inspect -h
-  biox inspect -w variant_calling.yml
+  biox inspect -w variant_calling.yml --path /rules/.*/local/indir
 
 =cut
 
@@ -52,6 +53,12 @@ option 'path' => (
     isa       => 'Str',
     required  => 0,
     predicate => 'has_path',
+);
+
+option 'json' => (
+    is      => 'rw',
+    isa     => 'Bool',
+    default => 0,
 );
 
 has 'inspect_obj' => (
@@ -99,8 +106,25 @@ sub execute {
         $self->p_local_attr( dclone( $self->local_attr ) );
     }
 
-    $self->comment_char('');
-    $self->find_inspect_obj;
+    $self->check_for_json;
+}
+
+sub check_for_json {
+    my $self = shift;
+    ##TODO These should be too different interfaces
+    if ( $self->json ) {
+        $self->app_log->warn(
+            'You have selected a path, but this is not applied with --json')
+          if $self->has_path;
+        my $json =
+          JSON->new->utf8->pretty->allow_blessed->encode( $self->inspect_obj );
+        print $json;
+    }
+    else {
+        $self->find_inspect_obj;
+        $self->comment_char('');
+    }
+
 }
 
 sub find_inspect_obj {
