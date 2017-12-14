@@ -38,3 +38,4 @@ matrix:
       script:
         - biox run -h
         - biox new -h
+        - biox inspect -h
