@@ -78,7 +78,7 @@ sub my_broken {
 # The following errors were encountered:
 # $text
 # $error
-###################################################
+####################################################
 EOF
 }
 

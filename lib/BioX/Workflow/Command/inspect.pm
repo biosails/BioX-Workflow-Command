@@ -92,6 +92,9 @@ sub execute {
     $self->global_attr->create_outdir(0);
     $self->return_global_as_object;
 
+    $self->get_samples;
+    my @samples = dclone($self->samples);
+    $self->inspect_obj->{samples} = \@samples;
     $self->samples( ['Sample_XYZ'] );
 
     $self->set_rule_names;
@@ -121,8 +124,8 @@ sub check_for_json {
         print $json;
     }
     else {
-        $self->find_inspect_obj;
         $self->comment_char('');
+        $self->find_inspect_obj;
     }
 
 }
