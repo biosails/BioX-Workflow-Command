@@ -57,7 +57,7 @@ sub interpol_directive {
     return $text;
 }
 
-memoize('my_broken');
+# memoize('my_broken');
 
 sub my_broken {
     my %args    = @_;

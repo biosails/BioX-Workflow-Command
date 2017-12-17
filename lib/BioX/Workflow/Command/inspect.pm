@@ -5,8 +5,8 @@ use MooseX::App::Command;
 use namespace::autoclean;
 
 use Data::Dumper;
-use Storable qw(dclone);
 use YAML;
+use Storable qw(dclone);
 use Try::Tiny;
 use JSON;
 
@@ -22,7 +22,6 @@ with 'BioX::Workflow::Command::run::Utils::WriteMeta';
 with 'BioX::Workflow::Command::run::Utils::Files::TrackChanges';
 with 'BioX::Workflow::Command::run::Utils::Files::ResolveDeps';
 with 'BioX::Workflow::Command::Utils::Files';
-with 'BioX::Workflow::Command::inspect::Utils::ParsePlainText';
 
 use BioX::Workflow::Command::run;
 use BioX::Workflow::Command::inspect::Exceptions::Path;
@@ -61,11 +60,12 @@ option 'json' => (
     default => 0,
 );
 
-has 'inspect_obj' => (
+option 'show_only_errors' => (
     is      => 'rw',
-    isa     => 'HashRef',
-    default => sub { return {} },
+    isa     => 'Bool',
+    default => 0,
 );
+
 
 =head3 samples
 
@@ -84,30 +84,18 @@ sub execute {
         $self->app_log->warn('Exiting now.');
         return;
     }
-    $self->get_line_declarations;
 
     $DB::single = 2;
 
     $self->apply_global_attributes;
     $self->global_attr->create_outdir(0);
+
     $self->return_global_as_object;
 
     $self->get_samples;
-    my @samples = dclone($self->samples);
-    $self->inspect_obj->{samples} = \@samples;
-    $self->samples( ['Sample_XYZ'] );
-
-    $self->set_rule_names;
-    my $rules = $self->workflow_data->{rules};
-
-    $self->filter_rule_keys;
-
-    foreach my $rule (@$rules) {
-        $self->local_rule($rule);
-        $self->process_rule;
-        $self->p_rule_name( $self->rule_name );
-        $self->p_local_attr( dclone( $self->local_attr ) );
-    }
+    $self->samples(['Sample_XYZ']);
+    $self->dummy_sample('Sample_XYZ');
+    $self->iterate_rules;
 
     $self->check_for_json;
 }
@@ -127,7 +115,6 @@ sub check_for_json {
         $self->comment_char('');
         $self->find_inspect_obj;
     }
-
 }
 
 sub find_inspect_obj {
@@ -135,7 +122,7 @@ sub find_inspect_obj {
 
     if ( $self->has_path ) {
         my @split = split( '/', $self->path );
-        if ( scalar @split >= 5 ) {
+        if ( scalar @split >= 6 ) {
             my $except =
               BioX::Workflow::Command::inspect::Exceptions::Path->new(
                 info => 'Your split path contains too many elements.'
@@ -175,10 +162,9 @@ sub find_inspect_obj_rules {
               BioX::Workflow::Command::inspect::Exceptions::Path->new(
                     info => 'You must supply a  rule name '
                   . $rule
-                  . ' Examples: --path /rules/.*/local/.*,--path /rules/some_rule/local/.*, --path /rules/.*/process'
+                  . ' Examples: --path /rules/.*/local/.* or --path /rules/some_rule/local/.* or --path /rules/.*/process'
               );
             $except->fatal( $self->app_log );
-            exit 1;
         }
         if ( $rule =~ m/$rule_name/ ) {
             print "Rule: $rule\n";
@@ -191,7 +177,6 @@ sub find_inspect_obj_rules {
                       . ' Examples: --path /rules/.*/local/.*, --path /rules/.*/process'
                   );
                 $except->fatal( $self->app_log );
-                exit 1;
             }
             elsif ( !$split->[3] ) {
                 my $except =
@@ -201,7 +186,6 @@ sub find_inspect_obj_rules {
                       . ' Examples: --path /rules/.*/local/.*, --path /rules/.*/process'
                   );
                 $except->fatal( $self->app_log );
-                exit 1;
             }
             elsif ( $split->[3] eq 'local' ) {
                 $self->find_inspect_obj_rule_keys( $rule, $wanted_key );
@@ -265,82 +249,6 @@ sub find_inspect_obj_global {
 
     $self->app_log->warn( 'We were not able to find key ' . $wanted_key )
       unless $seen;
-}
-
-##Overrididng the eval_process
-sub eval_process {
-    my $self = shift;
-
-    $self->sample('Sample_XYZ');
-    my $attr = $self->walk_attr;
-
-    $self->walk_indir_outdir($attr);
-
-    my $text = $self->eval_rule($attr);
-    $text = clean_text($text);
-
-    $self->walk_FILES($attr);
-    $self->clear_files;
-
-    $self->local_attr->stash( dclone( $attr->stash ) );
-
-    $self->return_rule_as_obj($attr);
-
-    return $text;
-}
-
-sub return_rule_as_obj {
-    my $self = shift;
-    my $attr = shift;
-
-    my $clean = {};
-    foreach my $key ( @{ $self->rule_keys } ) {
-        if ( ref( $attr->$key ) eq 'Path::Tiny' ) {
-            $clean->{$key} = $attr->$key->stringify;
-            next;
-        }
-        $clean->{$key} = $attr->$key;
-    }
-
-    my @haves = ( 'indir', 'outdir', 'INPUT', 'OUTPUT', 'stash' );
-    foreach my $h (@haves) {
-        if ( !exists $clean->{$h} ) {
-            $clean->{$h} = $self->check_path( $attr->$h );
-        }
-    }
-
-    $self->inspect_obj->{rules}->{ $self->rule_name }->{local} = $clean;
-    $self->inspect_obj->{rules}->{ $self->rule_name }->{rule_keys} =
-      dclone( $self->rule_keys );
-    $self->get_line_number_rules;
-    return $clean;
-}
-
-sub return_global_as_object {
-    my $self = shift;
-
-    $self->get_global_keys;
-
-    my $attr = dclone( $self->global_attr );
-    $attr->walk_process_data( $self->global_keys );
-
-    my $global = {};
-
-    foreach my $key ( @{ $self->global_keys } ) {
-        $global->{$key} = $self->check_path( $attr->{$key} );
-    }
-
-    $self->inspect_obj->{global} = $global;
-}
-
-sub check_path {
-    my $self = shift;
-    my $val  = shift;
-
-    if ( ref($val) eq 'Path::Tiny' ) {
-        $val = $val->stringify;
-    }
-    return $val;
 }
 
 1;

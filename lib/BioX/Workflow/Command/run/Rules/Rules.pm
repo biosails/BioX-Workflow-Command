@@ -12,6 +12,11 @@ use Path::Tiny;
 
 use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
 
+use BioX::Workflow::Command::run::Rules::Directives::Exceptions::DidNotDeclare;
+use BioX::Workflow::Command::run::Rules::Directives::Exceptions::SyntaxError;
+
+with 'BioX::Workflow::Command::run::Rules::Directives::Inspect';
+
 =head1 Name
 
 BioX::Workflow::Command::run::Rules::Rules
@@ -227,10 +232,6 @@ sub iterate_rules {
         $self->p_rule_name( $self->rule_name );
         $self->p_local_attr( dclone( $self->local_attr ) );
     }
-
-    $self->post_process_rules;
-
-    $self->fh->close();
 }
 
 =head3 filter_rule_keys
@@ -498,7 +499,6 @@ sub template_process {
     my $dummy_texts = $self->check_iterables( $dummy_sample, [] );
 
     if ( !$self->local_attr->override_process ) {
-
         foreach my $sample ( $self->all_samples ) {
             foreach my $text ( @{$dummy_texts} ) {
                 my $new_text = $text;
@@ -605,8 +605,6 @@ sub in_template_process {
     $self->sample($sample);
     my $text = $self->eval_process();
 
-    # my $log  = $self->write_file_log();
-    # $text .= $log;
     push( @{$texts}, $text ) if $self->print_within_rule;
 
     return $texts;
@@ -628,9 +626,6 @@ sub eval_process {
     my $self = shift;
 
     my $attr = $self->walk_attr;
-
-    # $attr->sample( $self->sample ) if $self->has_sample;
-
     $self->walk_indir_outdir($attr);
 
     my $text = $self->eval_rule($attr);
@@ -640,6 +635,22 @@ sub eval_process {
     $self->clear_files;
 
     ##Carry stash when not in template
+    my $sample = $attr->sample;
+
+    $self->return_rule_as_obj($attr);
+
+    if ( $text =~ m/The following errors/ ) {
+        $self->app_log->warn('Error for \'process\'');
+        my $dummytext = $text;
+        $dummytext =~ s/__DUMMYSAMPLE123456789__/Sample_XYZ/g;
+        $self->inspect_obj->{errors}->{ $self->rule_name }->{process}->{msg} =
+          $dummytext;
+
+        $self->inspect_obj->{errors}->{ $self->rule_name }->{process}
+          ->{error_types} = $self->get_error_types( 'process', $dummytext );
+    }
+
+    $attr->sample($sample);
     $self->local_attr->stash( dclone( $attr->stash ) );
 
     return $text;
@@ -679,9 +690,10 @@ sub eval_rule {
         $self->app_log->warn(
                 'There were 1 or more errors evaluating rule:  '
               . $self->rule_name . '. '
-              . 'Please check the output file for details.' );
-        $attr->_ERROR(0);
+              . 'Please check the output file for details.'
+              . "\n" );
     }
+    $attr->_ERROR(0);
 
     return $text;
 }
@@ -709,7 +721,6 @@ sub get_keys {
 
     $self->local_rule_keys( dclone( \@local_keys ) );
 
-    #This should be an object for extending
     my @special_keys = ( 'indir', 'outdir', 'INPUT', 'OUTPUT' );
     foreach my $key (@special_keys) {
         if ( !$seen{$key} ) {
@@ -728,8 +739,6 @@ sub walk_indir_outdir {
     my $attr = shift;
 
     my $text = $attr->interpol_directive( $attr->outdir );
-
-    # $DB::single = 2;
     $self->walk_indir_outdir_sample( $attr, $text );
 }
 

@@ -6,8 +6,9 @@ use namespace::autoclean;
 has 'message' => (
     is      => 'rw',
     isa     => 'Str',
-    default => 'Error was thrown.',
-    documentation => 'This is a general message for the type of error thrown.'
+    required => 0,
+    documentation => 'This is a general message for the type of error thrown.',
+    predicate => 'has_message',
 );
 
 has 'info' => (
@@ -23,11 +24,11 @@ sub warn {
     my $logger = shift;
 
     if ($logger) {
-        $logger->warn( $self->message );
+        $logger->warn( $self->message ) if $self->has_message;
         $logger->warn( $self->info ) if $self->has_info;
     }
     else {
-        Core::warn $self->message;
+        Core::warn $self->message if $self->has_message;
         Core::warn $self->info  if $self->has_info;
     }
 }
@@ -37,13 +38,15 @@ sub fatal {
     my $logger = shift;
 
     if ($logger) {
-        $logger->fatal( $self->message );
+        $logger->fatal( $self->message ) if $self->has_message;
         $logger->fatal( $self->info ) if $self->has_info;
     }
     else {
-        Core::warn $self->message;
+        Core::warn $self->message if $self->has_message;
         Core::warn $self->info  if $self->has_info;
     }
+
+    exit 1;
 }
 
 1;

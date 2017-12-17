@@ -6,13 +6,18 @@ use namespace::autoclean;
 use Data::Walk 2.01;
 use Path::Tiny;
 
+has 'errors' => (
+   is => 'rw',
+   isa => 'HashRef',
+   default => sub {return {}},
+);
+
 sub walk_process_data {
     my $self = shift;
     my $keys = shift;
 
     foreach my $k ( @{$keys} ) {
         $DB::single = 2;
-        ##I don't think this does anything...
         next if ref($k);
         my $v = $self->$k;
         ##Leftover of backwards compatibility

@@ -56,15 +56,30 @@ sub get_line_number_rules {
       )
     {
         my $line = $self->workflow_plain_text->[$x];
-        if ( $found_rule && $found_local ) {
+        if ( $found_rule ) {
             $self->get_line_number_rule_key( $line, $x );
+            $self->get_line_number_rule_process( $line, $x );
         }
         elsif ( ( $line =~ m/\s*-\s*$rule_name\s*:/ ) ) {
             $found_rule = 1;
         }
-        elsif ( $found_rule && ( $line =~ m/\s*local\s*:/ ) ) {
-            $found_local = 1;
-        }
+    }
+}
+
+sub get_line_number_rule_process {
+    my $self       = shift;
+    my $line       = shift;
+    my $line_count = shift;
+
+    return
+      if
+      exists $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }
+      ->{process};
+
+    if ( ( $line =~ m/\s*process\s*:/ ) ) {
+        $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }
+          ->{process} = $line_count;
+        return;
     }
 }
 
