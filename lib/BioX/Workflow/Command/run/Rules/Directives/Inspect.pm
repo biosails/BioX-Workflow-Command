@@ -30,6 +30,8 @@ sub return_rule_as_obj {
     my $attr = shift;
 
     my $clean = {};
+    $self->get_line_number_rules;
+
     foreach my $key ( @{ $self->rule_keys } ) {
         my $t = $self->check_path( $attr->$key );
         $t =~ s/__DUMMYSAMPLE123456789__/Sample_XYZ/g;
@@ -49,7 +51,7 @@ sub return_rule_as_obj {
     $self->inspect_obj->{rules}->{ $self->rule_name }->{local} = $clean;
     $self->inspect_obj->{rules}->{ $self->rule_name }->{rule_keys} =
       dclone( $self->rule_keys );
-    $self->get_line_number_rules;
+
     return $clean;
 }
 
@@ -119,7 +121,11 @@ EOF
     $self->inspect_obj->{errors}->{ $self->rule_name }->{local}->{$k}->{msg} =
       $error;
 
-    $self->app_log->warn( 'Error for key \'' . $k . '\'' );
+    $self->app_log->warn( 'Error for key \''
+          . $k
+          . '\' Line #: '
+          . $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }
+          ->{local}->{$k} );
     $self->inspect_obj->{errors}->{ $self->rule_name }->{local}->{$k}
       ->{error_types} = $self->get_error_types( $k, $error );
 
@@ -136,19 +142,18 @@ sub get_error_types {
     if ( $error =~ m/Did you declare/ ) {
         my $except =
           BioX::Workflow::Command::run::Rules::Directives::Exceptions::DidNotDeclare
-          ->new( info => '[ERROR DidNotDeclare]: '  );
+          ->new( info => '[ERROR DidNotDeclare]: ' );
         $except->warn( $self->app_log );
         push( @error_types, 'DidNotDeclare' );
     }
     if ( $error =~ m/syntax/ ) {
         my $except =
           BioX::Workflow::Command::run::Rules::Directives::Exceptions::SyntaxError
-          ->new( info => '[ERROR Syntax]: '  );
+          ->new( info => '[ERROR Syntax]: ' );
         $except->warn( $self->app_log );
         push( @error_types, 'Syntax' );
     }
-    $self->app_log->warn($error."\n");
-
+    $self->app_log->warn( $error . "\n" );
 
     return \@error_types;
 

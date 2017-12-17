@@ -142,7 +142,18 @@ sub find_inspect_obj {
         $self->find_inspect_obj_global( [ '', '.*', '.*', '.*' ] );
     }
 
-    ##TODO Select_effect
+    $self->find_inspect_obj_select if $self->select_effect;
+}
+
+sub find_inspect_obj_select {
+    my $self = shift;
+
+    return unless $self->has_select_rule_keys;
+
+    foreach my $rule ( @{ $self->select_rules } ) {
+        $self->find_inspect_obj_rules( [ '', '.*', $rule, '.*', '.*' ] );
+    }
+
 }
 
 sub find_inspect_obj_path {
@@ -226,7 +237,7 @@ sub find_inspect_obj_rules {
             }
         }
         &promptUser("Next rule") if $self->step_rule;
-        print "\n\n";
+        print "\n";
     }
 }
 
@@ -287,16 +298,6 @@ sub promptUser {
     my $promptString = shift;
     my $defaultValue = shift;
 
-    #-------------------------------------------------------------------#
-    #  two possible input arguments - $promptString, and $defaultValue  #
-    #  make the input arguments local variables.                        #
-    #-------------------------------------------------------------------#
-
-    #-------------------------------------------------------------------#
-    #  if there is a default value, use the first print statement; if   #
-    #  no default is provided, print the second string.                 #
-    #-------------------------------------------------------------------#
-
     if ($defaultValue) {
         print $promptString, "[", $defaultValue, "]: ";
     }
@@ -308,22 +309,7 @@ sub promptUser {
     $| = 1;          # force a flush after our print
     $_ = <STDIN>;    # get the input from STDIN (presumably the keyboard)
 
-    #------------------------------------------------------------------#
-    # remove the newline character from the end of the input the user  #
-    # gave us.                                                         #
-    #------------------------------------------------------------------#
-
     chomp;
-
-    #-----------------------------------------------------------------#
-    #  if we had a $default value, and the user gave us input, then   #
-    #  return the input; if we had a default, and they gave us no     #
-    #  no input, return the $defaultValue.                            #
-    #                                                                 #
-    #  if we did not have a default value, then just return whatever  #
-    #  the user gave us.  if they just hit the <enter> key,           #
-    #  the calling routine will have to deal with that.               #
-    #-----------------------------------------------------------------#
 
     my $retvalue;
     if ("$defaultValue") {

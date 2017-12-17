@@ -42,6 +42,7 @@ sub get_line_declarations {
 
 sub get_line_number_rules {
     my $self = shift;
+
     $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }->{local}
       = {};
 

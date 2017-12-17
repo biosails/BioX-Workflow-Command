@@ -651,7 +651,9 @@ sub eval_process {
     $self->return_rule_as_obj($attr);
 
     if ( $text =~ m/The following errors/ ) {
-        $self->app_log->warn('Error for \'process\'');
+        $self->app_log->warn( 'Error for \'process\' Line #: '
+              . $self->inspect_obj->{line_numbers}->{rules}
+              ->{ $self->rule_name }->{process} );
         my $dummytext = $text;
         $dummytext =~ s/__DUMMYSAMPLE123456789__/Sample_XYZ/g;
         $self->inspect_obj->{errors}->{ $self->rule_name }->{process}->{msg} =
