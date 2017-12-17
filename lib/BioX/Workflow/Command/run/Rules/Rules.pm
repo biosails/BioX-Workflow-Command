@@ -12,8 +12,8 @@ use Path::Tiny;
 
 use BioSAILs::Utils::Traits qw(ArrayRefOfStrs);
 
-use BioX::Workflow::Command::run::Rules::Directives::Exceptions::DidNotDeclare;
-use BioX::Workflow::Command::run::Rules::Directives::Exceptions::SyntaxError;
+use BioX::Workflow::Command::run::Rules::Exceptions::KeyDeclaration;
+use BioX::Workflow::Command::run::Rules::Exceptions::OneRuleName;
 
 with 'BioX::Workflow::Command::run::Rules::Directives::Inspect';
 
@@ -228,7 +228,8 @@ sub iterate_rules {
 
     foreach my $rule (@$rules) {
         $self->local_rule($rule);
-        $self->process_rule;
+        my $except = $self->process_rule;
+        next if $except;
         $self->p_rule_name( $self->rule_name );
         $self->p_local_attr( dclone( $self->local_attr ) );
     }
@@ -420,7 +421,8 @@ This function is just a placeholder for the other functions we need to process a
 sub process_rule {
     my $self = shift;
 
-    $self->sanity_check_rule;
+    my $except = $self->sanity_check_rule;
+    return $except if $except;
 
     $self->local_attr( dclone( $self->global_attr ) );
 
@@ -430,6 +432,7 @@ sub process_rule {
 
     $self->get_keys;
     $self->template_process;
+    return 0;
 }
 
 =head3 sanity_check_rule
@@ -445,23 +448,26 @@ sub sanity_check_rule {
 
     my @keys = keys %{ $self->local_rule };
 
-    # $self->app_log->info("");
-    # $self->app_log->info("Beginning sanity check");
-    ##TODO Create Exception for these
     if ( $#keys != 0 ) {
-        $self->app_log->fatal(
-            'Sanity check fail: There should be one rule name!');
+        my $except =
+          BioX::Workflow::Command::run::Rules::Exceptions::OneRuleName->new();
+        $self->app_log->info(
+            'Rule: ' . $self->rule_name . ' fails sanity check' );
+        $except->warn( $self->app_log );
         $self->sanity_check_fail;
-        return;
+
+        $self->inspect_obj->{errors}->{ $self->rule_name }->{structure} =
+          'OneRuleName';
+        return $except;
     }
 
     $self->rule_name( $keys[0] );
 
     if ( !exists $self->local_rule->{ $self->rule_name }->{process} ) {
-        $self->app_log->fatal(
-            'Sanity check fail: Rule does not have a process!');
-        $self->sanity_check_fail;
-        return;
+        $self->local_rule->{ $self->rule_name }->{process} = '';
+        $self->app_log->warn(
+'Rule does not have a process. If you have registered a namespace please ignore this error.'
+        );
     }
 
     if ( !exists $self->local_rule->{ $self->rule_name }->{local} ) {
@@ -469,18 +475,23 @@ sub sanity_check_rule {
     }
     else {
         my $ref = $self->local_rule->{ $self->rule_name }->{local};
-
-        if ( !ref($ref) eq 'ARRAY' ) {
-            $self->app_log->fatal(
-'Sanity check fail: Your variable declarations should begin with an array!'
-            );
+        if ( ref($ref) ne 'ARRAY' ) {
+            my $except =
+              BioX::Workflow::Command::run::Rules::Exceptions::KeyDeclaration
+              ->new();
+            $self->app_log->info(
+                'Rule: ' . $self->rule_name . ' fails sanity check' );
+            $except->warn( $self->app_log );
             $self->sanity_check_fail;
-            return;
+            $self->inspect_obj->{errors}->{ $self->rule_name }->{structure} =
+              'KeyDeclaration';
+            return $except;
         }
     }
 
     $self->app_log->info(
         'Rule: ' . $self->rule_name . ' passes sanity check' );
+    return 0;
 }
 
 =head3 template_process
@@ -961,7 +972,7 @@ sub sanity_check_fail {
 global:
     - indir: data/raw
     - outdir: data/processed
-    - sample_rule: (sample.*)$
+    - sample_rule: (sample.*)\$
     - by_sample_outdir: 1
     - find_sample_bydir: 1
     - copy1:
@@ -979,9 +990,31 @@ global:
 EOF
     $self->app_log->fatal('Skipping this rule.');
     $self->app_log->fatal(
-'Here is an example workflow. For more information please see biox-workflow.pl new --help.'
+'Here is an example workflow. For more information please see biox new --help.'
     );
     $self->app_log->fatal($rule_example);
+}
+
+sub print_process_workflow {
+    my $self = shift;
+
+    $self->app_log->info('Post processing rules and printing workflow...');
+    foreach my $rule ( $self->all_rule_names ) {
+
+        #TODO This should be named select_rule_names
+        my $index = $self->first_index_select_rule_keys( sub { $_ eq $rule } );
+        next if $index == -1;
+
+        my $meta = $self->process_obj->{$rule}->{meta} || [];
+        my $text = $self->process_obj->{$rule}->{text} || [];
+
+        map { $self->fh->say($_) } @{$meta};
+        $self->fh->say('');
+        map { $self->fh->say($_); $self->fh->say('') } @{$text};
+
+        $self->print_stats_rules($rule);
+
+    }
 }
 
 1;
