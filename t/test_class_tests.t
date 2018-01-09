@@ -4,6 +4,7 @@ use Test::Class::Moose::Load catdir( $Bin, 'lib' );
 use Test::Class::Moose::Runner;
 ##Tests fail without this
 use IO::Interactive;
+use Test::Exception 0.43;
 
 ##Run the main applications tests
 

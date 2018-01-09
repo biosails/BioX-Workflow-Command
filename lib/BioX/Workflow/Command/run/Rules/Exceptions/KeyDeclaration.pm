@@ -10,4 +10,7 @@ sub BUILD {
   $self->message('Variable declarations should be in sequence/array format!');
 }
 
+no Moose;
+__PACKAGE__->meta->make_immutable;
+
 1;

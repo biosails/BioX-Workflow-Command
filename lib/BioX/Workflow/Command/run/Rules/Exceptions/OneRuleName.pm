@@ -10,4 +10,6 @@ sub BUILD {
   $self->message('There should be one rule per sequence under key \'rules\'');
 }
 
+__PACKAGE__->meta->make_immutable;
+
 1;

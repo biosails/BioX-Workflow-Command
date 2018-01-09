@@ -42,4 +42,6 @@ after 'BUILD' => sub {
     };
 };
 
+# no Moose;
+
 1;

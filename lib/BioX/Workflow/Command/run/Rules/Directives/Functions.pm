@@ -47,4 +47,7 @@ sub read_json_file {
     return $json;
 }
 
+# no Moose;
+no Moose::Role;
+
 1;

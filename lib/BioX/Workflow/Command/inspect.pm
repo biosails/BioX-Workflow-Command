@@ -101,7 +101,19 @@ sub execute {
     }
 
     $DB::single = 2;
+    if ( $self->json ) {
+        capture_stderr {
+            $self->inspect;
+        };
 
+    }
+    else {
+        $self->inspect;
+    }
+}
+
+sub inspect {
+    my $self = shift;
     $self->apply_global_attributes;
     $self->global_attr->create_outdir(0);
 
@@ -113,6 +125,7 @@ sub execute {
     $self->iterate_rules;
 
     $self->check_for_json;
+
 }
 
 sub check_for_json {
@@ -323,5 +336,7 @@ sub promptUser {
         exit 0;
     }
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

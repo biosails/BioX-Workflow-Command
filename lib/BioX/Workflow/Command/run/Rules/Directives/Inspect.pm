@@ -118,15 +118,15 @@ EOF
 
     return unless $error;
 
-    $self->inspect_obj->{errors}->{ $self->rule_name }->{local}->{$k}->{msg} =
+    $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{local}->{$k}->{msg} =
       $error;
 
     $self->app_log->warn( 'Error for key \''
           . $k
           . '\' Line #: '
           . $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }
-          ->{local}->{$k} );
-    $self->inspect_obj->{errors}->{ $self->rule_name }->{local}->{$k}
+          ->{local}->{$k}->{line} ) if $self->inspect_obj->{line_numbers}->{rules}->{ $self->rule_name }->{local}->{$k}->{line};
+    $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{local}->{$k}
       ->{error_types} = $self->get_error_types( $k, $error );
 
     return $error;

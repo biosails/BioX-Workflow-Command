@@ -189,4 +189,6 @@ sub return_path {
     return "$text";
 }
 
+no Moose;
+
 1;

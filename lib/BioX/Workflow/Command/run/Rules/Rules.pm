@@ -446,22 +446,10 @@ Check the rule to make sure it only has 1 key
 sub sanity_check_rule {
     my $self = shift;
 
-    my @keys = keys %{ $self->local_rule };
+    my $except;
 
-    if ( $#keys != 0 ) {
-        my $except =
-          BioX::Workflow::Command::run::Rules::Exceptions::OneRuleName->new();
-        $self->app_log->info(
-            'Rule: ' . $self->rule_name . ' fails sanity check' );
-        $except->warn( $self->app_log );
-        $self->sanity_check_fail;
-
-        $self->inspect_obj->{errors}->{ $self->rule_name }->{structure} =
-          'OneRuleName';
-        return $except;
-    }
-
-    $self->rule_name( $keys[0] );
+    $except = $self->sanity_check_rule_one_rule_name;
+    return $except if $except;
 
     if ( !exists $self->local_rule->{ $self->rule_name }->{process} ) {
         $self->local_rule->{ $self->rule_name }->{process} = '';
@@ -474,24 +462,56 @@ sub sanity_check_rule {
         $self->local_rule->{ $self->rule_name }->{local} = [];
     }
     else {
-        my $ref = $self->local_rule->{ $self->rule_name }->{local};
-        if ( ref($ref) ne 'ARRAY' ) {
-            my $except =
-              BioX::Workflow::Command::run::Rules::Exceptions::KeyDeclaration
-              ->new();
-            $self->app_log->info(
-                'Rule: ' . $self->rule_name . ' fails sanity check' );
-            $except->warn( $self->app_log );
-            $self->sanity_check_fail;
-            $self->inspect_obj->{errors}->{ $self->rule_name }->{structure} =
-              'KeyDeclaration';
-            return $except;
-        }
+        $except = $self->sanity_check_rule_local_structure;
+        return $except if $except;
     }
 
     $self->app_log->info(
         'Rule: ' . $self->rule_name . ' passes sanity check' );
     return 0;
+}
+
+sub sanity_check_rule_one_rule_name {
+    my $self = shift;
+
+    my @keys = keys %{ $self->local_rule };
+    $self->rule_name( $keys[0] );
+
+    return if $#keys == 0;
+
+    my $except =
+      BioX::Workflow::Command::run::Rules::Exceptions::OneRuleName->new();
+    $self->app_log->info( 'Rule: ' . $self->rule_name . ' fails sanity check' );
+    if(exists $self->local_rule->{process}){
+      $self->app_log->warn('\'Process\' found at same indentation as rule name. Increase the indentation for this key!');
+    }
+    if(exists $self->local_rule->{local}){
+      $self->app_log->warn('\'Local\' found at same indentation as rule name. Increase the indentation for this key!');
+    }
+
+    $except->warn( $self->app_log );
+    $self->sanity_check_fail;
+
+    $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{structure} =
+      'OneRuleName';
+    return $except;
+}
+
+sub sanity_check_rule_local_structure {
+    my $self = shift;
+    my $ref  = $self->local_rule->{ $self->rule_name }->{local};
+
+    return if ref($ref) eq 'ARRAY';
+
+    my $except =
+      BioX::Workflow::Command::run::Rules::Exceptions::KeyDeclaration->new();
+    $self->app_log->info( 'Rule: ' . $self->rule_name . ' fails sanity check' );
+    $except->warn( $self->app_log );
+    $self->sanity_check_fail;
+    $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{structure} =
+      'KeyDeclaration';
+
+    return $except;
 }
 
 =head3 template_process
@@ -653,13 +673,13 @@ sub eval_process {
     if ( $text =~ m/The following errors/ ) {
         $self->app_log->warn( 'Error for \'process\' Line #: '
               . $self->inspect_obj->{line_numbers}->{rules}
-              ->{ $self->rule_name }->{process} );
+              ->{ $self->rule_name }->{process}->{line} );
         my $dummytext = $text;
         $dummytext =~ s/__DUMMYSAMPLE123456789__/Sample_XYZ/g;
-        $self->inspect_obj->{errors}->{ $self->rule_name }->{process}->{msg} =
-          $dummytext;
+        $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{process}
+          ->{msg} = $dummytext;
 
-        $self->inspect_obj->{errors}->{ $self->rule_name }->{process}
+        $self->inspect_obj->{errors}->{rules}->{ $self->rule_name }->{process}
           ->{error_types} = $self->get_error_types( 'process', $dummytext );
     }
 
@@ -1018,5 +1038,8 @@ sub print_process_workflow {
 
     }
 }
+
+
+no Moose::Role;
 
 1;
