@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Added inspect command
+	- Pinned some versions of modules (MooseX::App, Test::Exception)
 
 2.3.1  2017-12-05 17:29:09 GST
 	- Bug fix in Debug
