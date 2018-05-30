@@ -9,3 +9,4 @@ vendor
 local
 cpanfile.snapshot
 set_env.sh
+.idea
