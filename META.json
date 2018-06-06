@@ -45,7 +45,6 @@
             "BioSAILs::Utils::LoadConfigs" : "0",
             "BioSAILs::Utils::Plugin" : "0",
             "BioSAILs::Utils::Traits" : "0",
-            "BioX::Workflow::Command::run::Rules::Directives::MCE" : "0",
             "Capture::Tiny" : "0",
             "Config::Any" : "0",
             "Cwd" : "0",

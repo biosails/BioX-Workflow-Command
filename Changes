@@ -1,6 +1,7 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+	- Bug fix - removed Directives::MCE
 
 2.4.0  2018-06-06 14:47:12 GST
 	- Introduced Jinja templating, first example of using other languages with BioX
