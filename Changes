@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.4.1  2018-06-06 15:44:13 GST
 	- Bug fix - removed Directives::MCE
 
 2.4.0  2018-06-06 14:47:12 GST
