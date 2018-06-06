@@ -1,6 +1,8 @@
 Revision history for BioX-Workflow-Command
 
 {{$NEXT}}
+
+2.4.0  2018-06-06 14:47:12 GST
 	- Introduced Jinja templating, first example of using other languages with BioX
 	- Introduced MCE for parallel processing with large number of samples
 	- Introduced data_loop, is now possible to specify from the config nested loop structure
