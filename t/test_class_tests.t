@@ -16,7 +16,7 @@ Test::Class::Moose::Runner->new(
         'TestsFor::BioX::Workflow::Command::run::Test001',
         'TestsFor::BioX::Workflow::Command::run::Test002',
         'TestsFor::BioX::Workflow::Command::run::Test003',
-        # 'TestsFor::BioX::Workflow::Command::run::Test004',
+#         'TestsFor::BioX::Workflow::Command::run::Test004',
         'TestsFor::BioX::Workflow::Command::run::Test005',
         'TestsFor::BioX::Workflow::Command::run::Test006',
         'TestsFor::BioX::Workflow::Command::run::Test007',

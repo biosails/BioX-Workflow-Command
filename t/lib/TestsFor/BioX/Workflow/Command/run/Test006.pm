@@ -30,40 +30,31 @@ sub write_test_file {
     my $fh;
     my $href = {
         global => [
-            { sample_rule       => "Sample_.*" },
-            { root_dir          => 'data/raw' },
-            { indir             => '{$self->root_dir}' },
-            { outdir            => 'data/processed' },
+            { sample_rule => "Sample_.*" },
+            { root_dir => 'data/raw' },
+            { indir => '{$self->root_dir}' },
+            { outdir => 'data/processed' },
             { find_sample_bydir => 1 },
-            { by_sample_outdir  => 1 },
-            {
-                chunks => {
-                    start => 1,
-                    end   => 10,
-                    step  => 1,
-                }
-            },
-            {
-                use_chunks => 1,
-            },
+            { by_sample_outdir => 1 },
+            { chunks => [ 1 .. 10] },
+            { data_loop => [{ key => 'sample', value => 'samples' }, { key => 'chunk', 'value' => 'chunks' } ]},
             {
                 some_list => [ 1, 2, 3 ],
             },
         ],
-        rules => [
+        rules  => [
             {
                 t3_rule1 => {
                     'local' => [
                         { root_dir => 'data/raw' },
                         {
                             INPUT =>
-'{$self->root_dir}/{$sample}/some_input_rule1.{$self->chunk}'
+                                '{$self->root_dir}/{$sample}/some_input_rule1.{$self->chunk}'
                         },
-                        { OUTPUT => ['some_output_rule1'] },
-                        { use_chunks => 1 },
+                        { OUTPUT => [ 'some_output_rule1' ] },
                     ],
                     process =>
-'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
+                        'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
                 },
             },
             {
@@ -72,29 +63,29 @@ sub write_test_file {
                         { root_dir => 'data/raw' },
                         {
                             INPUT =>
-                              '{$self->root_dir}/{$sample}/some_input_rule1'
+                                '{$self->root_dir}/{$sample}/some_input_rule1'
                         },
                         { use_chunks => 1 },
-                        { OUTPUT     => ['some_output_rule1'] },
+                        { OUTPUT => [ 'some_output_rule1' ] },
                     ],
                     process =>
-'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
+                        'R1: INDIR: {$self->indir} INPUT: {$self->INPUT} outdir: {$self->outdir} OUTPUT: {$self->OUTPUT->[0]}',
                 },
             },
         ]
     };
 
     #Write out the config
-    open( $fh, ">$test_dir/conf/test1.1.yml" )
-      or die print "Couldn't open file! $!";
+    open($fh, ">$test_dir/conf/test1.1.yml")
+        or die print "Couldn't open file! $!";
     my $yaml = Dump $href;
     print $fh $yaml;
     close($fh);
 
-    make_path( $test_dir . "/data/raw/Sample_01" );
-    make_path( $test_dir . "/data/raw/Sample_02" );
-    write_file( $test_dir . "/data/raw/Sample_01/" . "some_input_rule1" );
-    write_file( $test_dir . "/data/raw/Sample_02/" . "some_input_rule1" );
+    make_path($test_dir . "/data/raw/Sample_01");
+    make_path($test_dir . "/data/raw/Sample_02");
+    write_file($test_dir . "/data/raw/Sample_01/" . "some_input_rule1");
+    write_file($test_dir . "/data/raw/Sample_02/" . "some_input_rule1");
 }
 
 #sub construct_tests {

@@ -4,7 +4,7 @@ use MooseX::App::Role;
 use namespace::autoclean;
 
 use Storable qw(dclone);
-use Data::Merger qw(merger);
+#use Data::Merger qw(merger);
 use Data::Dumper;
 use File::Path qw(make_path remove_tree);
 use Try::Tiny;
@@ -565,7 +565,7 @@ sub template_process {
 
 =head3 use_iterables
 
-TODO Deprecate this!
+This is deprecated and will be removed in the next version!
 
 Check the global and local keys to see if we are using any iterables
 
@@ -660,8 +660,9 @@ sub render_rule_no_override_process {
     my $texts = $self->mce_apply_data_loop(\@terms);
 
     #    my @texts = map {$self->apply_data_loop($_)} @terms;
-    $self->local_attr->stash(\%stash);
     #    return \@texts;
+    $self->local_attr->stash(\%stash);
+#    $self->local_attr->stash(\%stash);
     return $texts;
 }
 
@@ -759,6 +760,7 @@ sub eval_process {
     ##Have to add the MCE Shared stash back to the local attr
     %stash = %{dclone($attr->stash)};
     $self->local_attr->stash(\%stash);
+#    $self->local_attr->stash(\%stash);
 
     return $text;
 }
@@ -1034,7 +1036,6 @@ Outdir should be global_attr->outdir/rule_name
 sub carry_directives {
     my $self = shift;
 
-    # $DB::single = 2;
     ##TODO File Spec This!
     $self->local_attr->outdir(
         $self->global_attr->outdir . '/' . $self->rule_name);
@@ -1052,7 +1053,7 @@ sub carry_directives {
         }
     }
 
-    $self->local_attr->stash(dclone($self->p_local_attr->stash));
+    $self->local_attr->merge_stash(dclone($self->p_local_attr->stash));
 }
 
 sub sanity_check_fail {
