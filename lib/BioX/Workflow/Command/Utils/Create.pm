@@ -1,5 +1,7 @@
 package BioX::Workflow::Command::Utils::Create;
 
+use strict;
+use warnings FATAL => 'all';
 use MooseX::App::Role;
 use namespace::autoclean;
 

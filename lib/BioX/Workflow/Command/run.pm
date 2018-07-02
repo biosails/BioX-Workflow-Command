@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::run;
 
 use v5.10;
+use strict;
+use warnings FATAL => 'all';
 use MooseX::App::Command;
 use namespace::autoclean;
 
