@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::new;
 
 use v5.10;
+use strict;
+use warnings FATAL => 'all';
 use MooseX::App::Command;
 use namespace::autoclean;
 
@@ -23,8 +25,8 @@ command_long_description 'Create a new workflow.';
 
 Create a new workflow
 
-  biox new -h
-  biox new -w my_new_workflow.yml
+  biosails new -h
+  biosails new -w my_new_workflow.yml
 
 =cut
 

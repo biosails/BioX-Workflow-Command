@@ -21,7 +21,7 @@ with 'BioSAILs::Utils::LoadConfigs';
 
 option '+config_base' => (
     is      => 'rw',
-    default => '.bioxworkflow',
+    default => '.biosailsworkflow',
 );
 
 sub BUILD { }
@@ -51,67 +51,52 @@ __END__
 
 =head1 NAME
 
-BioX::Workflow::Command - Opinionated Bioinformatics Genomics Workflow Creator
+BioX::Workflow::Command -  Scientific Workflow Creator
 
 =head1 SYNOPSIS
 
-  biox run -w workflow.yml
-  biox -h
+  biosails render -w workflow.yml
+  biosails -h
 
-=head1 documentation
+=head1 Documentation
 
-Full documentation is available at gitbooks. L<Documentation |
-https://biosails.gitbooks.io/biox-workflow-command-docs/content/>
+See our website for the complete documentation. L<Documentation | https://biosails.abudhabi.nyu.edu/biosails/>
+
+=head1 Available Workflows
+
+Many workflows are available on the website. They can be downloaded as is, or modified using our in house workflow creator.
+
+L<In house workflows | https://biosails.abudhabi.nyu.edu/biosails/index.php/templates/>
 
 =head1 Quick Start
 
 =head2 Get Help
 
   #Global Help
-  biox --help
-  biox-workflow.pl --help
+  biosails --help
   #Help Per Command
-  biox run --help
+  biosails render --help
 
 =head2 Run a Workflow
 
-  #Previously biox-workflow.pl --workflow workflow.yaml
-  biox run -w workflow.yml #or --workflow
-  biox-workflow.pl run --workflow workflow.yml
-
-=head2 Run a Workflow with make like utilities
-
-
-Using the option --auto_deps will create #HPC deps based on your INPUT/OUTPUTs -
-use this with caution. It will only work correctly if INPUT/OUTPUT is complete
-and accurate.
-
-  biox run --workflow workflow.yml --auto_deps
-
+  biosails render -w workflow.yml #or --workflow
 
 =head2 Create a new workflow
 
 This creates a new workflow with rules rule1, rule2, rule3, with a few variables
 to help get you started.
 
-  biox new -w workflow.yml --rules rule1,rule2,rule3
+  biosails new -w workflow.yml --rules rule1,rule2,rule3
 
 =head2 Add a new rule to a workflow
 
 Add new rules to an existing workflow.
 
-  biox add -w workflow.yml --rules rule4
-
-=head2 Check the status of files in your workflow
-
-You must have defined INPUT/OUTPUTs to make use of this rule. If you do, biox
-will output a table with information about your files.
-
-  biox stats -w workflow.yml
+  biosails add -w workflow.yml --rules rule4
 
 =head1 DESCRIPTION
 
-BioX::Workflow::Command is a templating system for creating Bioinformatics Workflows.
+BioX::Workflow::Command is a templating and rendering system for creating Scientific Workflows.
 
 =head1 AUTHOR
 
@@ -146,5 +131,11 @@ the authors would like to express their gratitude.
 
 
 =head1 SEE ALSO
+
+L<Snakemake | https://snakemake.readthedocs.io/ >
+L<BcBio | http://bcb.io/ >
+L<Nextflow | https://www.nextflow.io/>
+BioSAILs::Command
+HPC::Runner::Command
 
 =cut

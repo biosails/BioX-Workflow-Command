@@ -28,8 +28,8 @@ command_long_description
 
 =head1 BioX::Workflow::Command::run
 
-  biox run -h
-  biox run -w variant_calling.yml
+  biosails render -h
+  biosails render -w variant_calling.yml
 
 =cut
 

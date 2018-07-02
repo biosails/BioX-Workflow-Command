@@ -1066,22 +1066,23 @@ global:
     - sample_rule: (sample.*)\$
     - by_sample_outdir: 1
     - find_sample_bydir: 1
-    - copy1:
-        local:
-            - indir: '{\$my_dir}'
-            - INPUT: '{\$indir}/{\$sample}.csv'
-            - HPC:
-                - mem: '40GB'
-                - walltime: '40GB'
-        process: |
-            echo 'MyDir on {\$my_dir}'
-            echo 'Indir on {\$indir}'
-            echo 'Outdir on {\$outdir}'
-            echo 'INPUT on {\$INPUT}'
+    - rules:
+        - rule1:
+            local:
+                - indir: '{\$my_dir}'
+                - INPUT: '{\$indir}/{\$sample}.csv'
+                - HPC:
+                    - mem: '40GB'
+                    - walltime: '40GB'
+            process: |
+                echo 'MyDir on {\$my_dir}'
+                echo 'Indir on {\$indir}'
+                echo 'Outdir on {\$outdir}'
+                echo 'INPUT on {\$INPUT}'
 EOF
     $self->app_log->fatal('Skipping this rule.');
     $self->app_log->fatal(
-        'Here is an example workflow. For more information please see biox new --help.'
+        'Here is an example workflow. For more information please see biosails render --help.'
     );
     $self->app_log->fatal($rule_example);
 }

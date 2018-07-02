@@ -1,6 +1,8 @@
 package BioX::Workflow::Command::inspect;
 
 use v5.10;
+use strict;
+use warnings FATAL => 'all';
 use MooseX::App::Command;
 use namespace::autoclean;
 
@@ -32,8 +34,8 @@ command_long_description
 
 =head1 BioX::Workflow::Command::inspect
 
-  biox inspect -h
-  biox inspect -w variant_calling.yml --path /rules/.*/local/indir
+  biosails inspect -h
+  biosails inspect -w variant_calling.yml --path /rules/.*/local/indir
 
 =cut
 
